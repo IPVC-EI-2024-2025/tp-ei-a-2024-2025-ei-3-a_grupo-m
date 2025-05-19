@@ -1,20 +1,111 @@
 package com.example.project_we_fix_it
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.project_we_fix_it.ui.theme.ProjectWeFixItTheme
+import dagger.hilt.android.AndroidEntryPoint
 
-class MainActivity : AppCompatActivity() {
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        setContent {
+            ProjectWeFixItTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavigation()
+                }
+            }
         }
     }
+}
+
+@Composable
+fun AppNavigation() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "login") {
+        composable("login") {
+            LoginScreen(
+                navController = navController,
+                onNavigateToRegister = { navController.navigate("register") },
+                onNavigateToPasswordRecovery = { navController.navigate("password_recovery") },
+                onLoginSuccess = { navController.navigate("dashboard") }
+            )
+        }
+        composable("register") {
+            RegisterScreen(
+                navController = navController,
+                onNavigateToLogin = { navController.navigate("login") },
+                onRegisterSuccess = { navController.navigate("login") }
+            )
+        }
+        composable("password_recovery") {
+            PasswordRecoveryScreen(
+                navController = navController,
+                onNavigateToLogin = { navController.navigate("login") }
+            )
+        }
+        composable("dashboard") {
+            DashboardScreen(
+                navController = navController,
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onOpenChat = { navController.navigate("messages") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onOpenMenu = { /* Show menu */ }
+            )
+        }
+        composable("messages") {
+            MessagesScreen(navController = navController)
+        }
+        composable("chat/{chatId}") { backStackEntry ->
+            ChatScreen(
+                navController = navController,
+                chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            )
+        }
+        composable("report") {
+            BreakdownReportingScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                onSave = { /* Save and navigate */ },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.popBackStack("dashboard", false) },
+                onNavigateToNotifications = { navController.navigate("notifications") }
+            )
+        }
+        composable("breakdown/{id}") { backStackEntry ->
+            BreakdownDetailsScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                onSave = { /* Save and navigate */ },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.popBackStack("dashboard", false) },
+                onNavigateToNotifications = { navController.navigate("notifications") }
+            )
+        }
+    }
+}
+
+@Composable
+fun ProjectWeFixItTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = WeFixItColorScheme,
+        typography = Typography,
+        content = content
+    )
 }
