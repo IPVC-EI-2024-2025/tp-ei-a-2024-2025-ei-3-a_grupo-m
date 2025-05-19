@@ -1,9 +1,12 @@
 [versions]
 androidx-core = "1.12.0"
 androidx-appcompat = "1.6.1"
+hilt-android = "2.48"
+hilt-navigation-compose = "1.2.0"
 material = "1.10.0"
 constraintlayout = "2.1.4"
 navigation = "2.7.5"
+navigation-compose = "2.9.0"
 viewpager2 = "1.0.0"
 lifecycle = "2.6.2"
 coroutines = "1.7.1"
@@ -14,11 +17,18 @@ junit = "4.13.2"
 androidx-junit = "1.1.5"
 espresso = "3.5.1"
 activity = "1.10.1"
+kotlin = "2.0.0"
+material3-android = "1.3.2"
 
 [libraries]
 # Core Android
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidx-appcompat" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt-navigation-compose" }
+androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt-android" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt-android" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
@@ -53,8 +63,10 @@ junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-junit" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3-android" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "8.1.0" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version = "1.9.0" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version = "1.9.0" }
+android-application = { id = "com.android.application", version = "8.8.0" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
