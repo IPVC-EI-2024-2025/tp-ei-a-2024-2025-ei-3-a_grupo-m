@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -69,6 +70,25 @@ fun AppNavigation() {
                 onOpenMenu = { /* Show menu */ }
             )
         }
+
+        // Add these new routes
+        composable("profile") {
+            UserProfileScreen(
+                navController = navController,
+                onNavigateToHome = { navController.navigate("dashboard") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToNotifications = { navController.navigate("notifications") }
+            )
+        }
+        composable("settings") {
+            SettingsScreen(
+                navController = navController,
+                onNavigateToHome = { navController.navigate("dashboard") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToNotifications = { navController.navigate("notifications") }
+            )
+        }
+
         composable("messages") {
             MessagesScreen(navController = navController)
         }
@@ -96,6 +116,15 @@ fun AppNavigation() {
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHome = { navController.popBackStack("dashboard", false) },
                 onNavigateToNotifications = { navController.navigate("notifications") }
+            )
+        }
+        composable("assignments") {
+            MyAssignmentsScreen(
+                navController = navController,
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.navigate("dashboard") },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") }
             )
         }
     }
