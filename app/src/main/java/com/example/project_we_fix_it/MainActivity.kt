@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -70,13 +69,20 @@ fun AppNavigation() {
                 onOpenMenu = { /* Show menu */ }
             )
         }
-
-        // Add these new routes
         composable("profile") {
             UserProfileScreen(
                 navController = navController,
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onOpenSettings = { navController.navigate("settings") },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onNavigateToEditProfile = { navController.navigate("edit_profile") }
+            )
+        }
+        composable("edit_profile") {
+            EditProfileScreen(
+                navController = navController,
+                onNavigateToProfile = { navController.popBackStack() },
+                onNavigateToHome = { navController.navigate("dashboard") },
                 onNavigateToNotifications = { navController.navigate("notifications") }
             )
         }
@@ -88,7 +94,6 @@ fun AppNavigation() {
                 onNavigateToNotifications = { navController.navigate("notifications") }
             )
         }
-
         composable("messages") {
             MessagesScreen(navController = navController)
         }

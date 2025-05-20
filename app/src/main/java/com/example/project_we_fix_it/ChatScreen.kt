@@ -91,7 +91,6 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Messages List
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 state = listState,

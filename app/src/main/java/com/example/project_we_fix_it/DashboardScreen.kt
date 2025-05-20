@@ -37,17 +37,14 @@ fun DashboardScreen(
     navController: NavController,
     viewModel: DashboardViewModel = viewModel()
 ) {
-    // For the bottom sheet
     val bottomSheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // For the drawer menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     val breakdowns by viewModel.breakdowns.collectAsState()
 
-    // Drawer layout for the menu
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -65,7 +62,6 @@ fun DashboardScreen(
 
                     MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
-                        // Already on home, no navigation needed
                     }
                     MenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
@@ -73,7 +69,6 @@ fun DashboardScreen(
                     }
                     MenuItemRow("My breakdowns", AndroidR.drawable.ic_menu_report_image) {
                         scope.launch { drawerState.close() }
-                        // Navigate to my breakdowns
                     }
                     MenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder) {
                         scope.launch { drawerState.close() }
@@ -81,11 +76,9 @@ fun DashboardScreen(
                     }
                     MenuItemRow("History", AndroidR.drawable.ic_menu_recent_history) {
                         scope.launch { drawerState.close() }
-                        // Navigate to history
                     }
                     MenuItemRow("Equipment", AndroidR.drawable.ic_menu_manage) {
                         scope.launch { drawerState.close() }
-                        // Navigate to equipment
                     }
                     MenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add) {
                         scope.launch { drawerState.close() }
@@ -93,15 +86,12 @@ fun DashboardScreen(
                     }
                     MenuItemRow("Technical Reports", AndroidR.drawable.ic_menu_edit) {
                         scope.launch { drawerState.close() }
-                        // Navigate to technical reports
                     }
                     MenuItemRow("Parts & Materials", AndroidR.drawable.ic_menu_compass) {
                         scope.launch { drawerState.close() }
-                        // Navigate to parts & materials
                     }
                     MenuItemRow("Calendar", AndroidR.drawable.ic_menu_month) {
                         scope.launch { drawerState.close() }
-                        // Navigate to calendar
                     }
                     MenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
                         scope.launch { drawerState.close() }
@@ -109,11 +99,9 @@ fun DashboardScreen(
                     }
                     MenuItemRow("Help/Support", AndroidR.drawable.ic_menu_help) {
                         scope.launch { drawerState.close() }
-                        // Navigate to help/support
                     }
                     MenuItemRow("Logout", AndroidR.drawable.ic_menu_close_clear_cancel) {
                         scope.launch { drawerState.close() }
-                        // Logout action
                     }
                 }
             }
@@ -238,16 +226,15 @@ fun DashboardScreen(
                     }
                 }
 
-                // Swipe-up gesture area with sheet handle indicator
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
-                        // Implementação do gesto de deslizar para cima para abrir bottom sheet
+
                         .pointerInput(Unit) {
                             detectDragGestures { change, dragAmount ->
                                 change.consume()
-                                // Se o gesto for para cima com uma distância significativa
+
                                 if (dragAmount.y < -10) {
                                     showBottomSheet = true
                                 }
@@ -255,27 +242,24 @@ fun DashboardScreen(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    // Mantém o indicador visual do bottom sheet
                     Box(
                         modifier = Modifier
                             .size(width = 32.dp, height = 4.dp)
                             .clip(RoundedCornerShape(2.dp))
                             .background(Color.Gray)
-                            .clickable { showBottomSheet = true } // Também permite o clique direto
+                            .clickable { showBottomSheet = true }
                     )
                 }
             }
         }
     }
 
-    // Bottom sheet com apenas UM indicador visual no topo
     if (showBottomSheet) {
         ModalBottomSheet(
             onDismissRequest = { showBottomSheet = false },
             sheetState = bottomSheetState,
             containerColor = Color.White,
             dragHandle = {
-                // Este é o único indicador visual no bottom sheet
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

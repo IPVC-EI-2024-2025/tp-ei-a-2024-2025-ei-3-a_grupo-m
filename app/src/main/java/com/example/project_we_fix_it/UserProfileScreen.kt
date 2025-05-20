@@ -3,9 +3,12 @@ package com.example.project_we_fix_it
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,9 +31,9 @@ fun UserProfileScreen(
     navController: NavController,
     onNavigateToHome: () -> Unit,
     onOpenSettings: () -> Unit,
-    onNavigateToNotifications: () -> Unit
+    onNavigateToNotifications: () -> Unit,
+    onNavigateToEditProfile: () -> Unit
 ) {
-    // For the drawer menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
@@ -49,16 +52,14 @@ fun UserProfileScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    // Menu items similar to DashboardScreen
                     MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
                         onNavigateToHome()
                     }
                     MenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
-                        // Already on profile
+
                     }
-                    // Add more menu items as needed
                 }
             }
         }
@@ -150,12 +151,10 @@ fun UserProfileScreen(
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Profile Image with Edit button
                 Box(
                     modifier = Modifier
                         .size(100.dp)
                 ) {
-                    // Profile image using colored circle with initial as a fallback
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -164,7 +163,7 @@ fun UserProfileScreen(
                             .border(2.dp, Color.White, CircleShape)
                     ) {
                         Text(
-                            text = "J",  // First letter of the user's name (Joaquim)
+                            text = "J",
                             color = Color.White,
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
@@ -172,34 +171,31 @@ fun UserProfileScreen(
                         )
                     }
 
-                    // Edit button overlay
-                    Box(
+                    IconButton(
+                        onClick = onNavigateToEditProfile,
                         modifier = Modifier
                             .size(28.dp)
                             .align(Alignment.BottomEnd)
                             .clip(CircleShape)
                             .background(Color(0xFF5C5CFF))
-                            .padding(4.dp)
                     ) {
                         Icon(
-                            painter = painterResource(id = AndroidR.drawable.ic_menu_edit),
+                            imageVector = Icons.Default.Edit,
                             contentDescription = "Edit",
                             tint = Color.White,
-                            modifier = Modifier.align(Alignment.Center)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // User Name
                 Text(
                     text = "Joaquim",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                // User ID
                 Text(
                     text = "№ 32432",
                     fontSize = 14.sp,
@@ -214,13 +210,11 @@ fun UserProfileScreen(
                     color = Color.LightGray
                 )
 
-                // User Information List
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 ) {
-                    // Email
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_dialog_email,
                         title = "Email",
@@ -229,7 +223,6 @@ fun UserProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Speciality
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_manage,
                         title = "Speciality",
@@ -238,7 +231,6 @@ fun UserProfileScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Block
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_slideshow,
                         title = "Block",

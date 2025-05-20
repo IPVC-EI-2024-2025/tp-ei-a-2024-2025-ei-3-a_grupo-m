@@ -24,11 +24,9 @@ fun SettingsScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToNotifications: () -> Unit
 ) {
-    // For the drawer menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // State for dark theme toggle
     var isDarkThemeEnabled by remember { mutableStateOf(false) }
 
     ModalNavigationDrawer(
@@ -46,7 +44,6 @@ fun SettingsScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    // Menu items similar to DashboardScreen
                     MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
                         onNavigateToHome()
@@ -57,9 +54,7 @@ fun SettingsScreen(
                     }
                     MenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
                         scope.launch { drawerState.close() }
-                        // Already on settings
                     }
-                    // Add more menu items as needed
                 }
             }
         }
@@ -83,7 +78,7 @@ fun SettingsScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { /* Additional settings if needed */ }) {
+                        IconButton(onClick = {  }) {
                             Icon(
                                 painter = painterResource(id = AndroidR.drawable.ic_menu_preferences),
                                 contentDescription = "Settings"
@@ -148,13 +143,11 @@ fun SettingsScreen(
                     .padding(padding)
                     .background(Color.White)
             ) {
-                // Settings Options List
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Language Settings
                     SettingsItem(
                         title = "Language",
                         description = "Choose your language",
@@ -174,7 +167,6 @@ fun SettingsScreen(
 
                     Divider(thickness = 1.dp, color = Color.LightGray)
 
-                    // Account Settings
                     SettingsItem(
                         title = "Account Settings",
                         description = "Manage your account settings",
@@ -184,7 +176,6 @@ fun SettingsScreen(
 
                     Divider(thickness = 1.dp, color = Color.LightGray)
 
-                    // Dark Theme Toggle
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -219,7 +210,6 @@ fun SettingsScreen(
 
                     Divider(thickness = 1.dp, color = Color.LightGray)
 
-                    // About Section
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
