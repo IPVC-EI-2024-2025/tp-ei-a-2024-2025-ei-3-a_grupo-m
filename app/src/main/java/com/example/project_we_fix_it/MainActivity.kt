@@ -132,14 +132,16 @@ fun AppNavigation() {
                 onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") }
             )
         }
+        composable("my_breakdowns") {
+            MyBreakdownsScreen(
+                navController = navController,
+                onBack = { navController.popBackStack() },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.navigate("dashboard") },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") }
+            )
+        }
     }
 }
 
-@Composable
-fun ProjectWeFixItTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = WeFixItColorScheme,
-        typography = Typography,
-        content = content
-    )
-}

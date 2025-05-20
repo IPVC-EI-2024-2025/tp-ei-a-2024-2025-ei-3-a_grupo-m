@@ -69,6 +69,7 @@ fun DashboardScreen(
                     }
                     MenuItemRow("My breakdowns", AndroidR.drawable.ic_menu_report_image) {
                         scope.launch { drawerState.close() }
+                        navController.navigate("my_breakdowns")
                     }
                     MenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder) {
                         scope.launch { drawerState.close() }
