@@ -1,6 +1,6 @@
-Equipment Breakdown Management in an Institution
+# Equipment Breakdown Management in an Institution
 
-ÂMBITO
+## ÂMBITO
 
 O objetivo deste tema é desenvolver uma aplicação móvel orientada para a gestão
 eficiente e organizada de avarias e manutenções de equipamentos numa instituição. A
@@ -8,7 +8,7 @@ aplicação deve permitir registar, acompanhar e resolver avarias de forma simpl
 rápida, melhorando a comunicação entre técnicos, gestores e utilizadores finais,
 promovendo a agilidade e eficiência operacional.
 
-FUNCIONALIDADES
+## FUNCIONALIDADES
 
 • Intro sliders com orientação à gestão operacional;
 
