@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,6 +35,7 @@ import android.R as AndroidR
 fun EditProfileScreen(
     navController: NavController,
     onNavigateToProfile: () -> Unit,
+    onBack: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToNotifications: () -> Unit
 ) {
@@ -65,10 +67,9 @@ fun EditProfileScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateToProfile) {
-                        Icon(
-                            painter = painterResource(id = AndroidR.drawable.ic_menu_revert),
-                            contentDescription = "Back"
-                        )
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(

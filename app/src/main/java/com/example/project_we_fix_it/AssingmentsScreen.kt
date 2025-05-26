@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -23,6 +25,7 @@ fun MyAssignmentsScreen(
     navController: NavHostController,
     onNavigateToProfile: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onOpenSettings: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onBreakdownClick: (String) -> Unit
 ) {
@@ -116,8 +119,11 @@ fun MyAssignmentsScreen(
             TopAppBar(
                 title = { Text("My Assignments") },
                 actions = {
-                    IconButton(onClick = { /* Open settings */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_menu_preferences),
+                            contentDescription = "Settings"
+                        )
                     }
                 }
             )

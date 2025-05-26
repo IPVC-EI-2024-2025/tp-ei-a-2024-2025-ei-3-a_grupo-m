@@ -56,7 +56,7 @@ fun MyBreakdownsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Filter breakdowns */ }) {
+                    IconButton(onClick = {}) {
                         Icon(
                             painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
                             contentDescription = "Filter"

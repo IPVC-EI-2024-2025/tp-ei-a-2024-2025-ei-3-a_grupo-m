@@ -83,8 +83,9 @@ fun AppNavigation() {
                 navController = navController,
                 onNavigateToProfile = { navController.popBackStack() },
                 onNavigateToHome = { navController.navigate("dashboard") },
-                onNavigateToNotifications = { navController.navigate("notifications") }
-            )
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onBack = { navController.popBackStack() },
+                )
         }
         composable("settings") {
             SettingsScreen(
@@ -129,7 +130,8 @@ fun AppNavigation() {
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
-                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") }
+                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") },
+                onOpenSettings = { navController.navigate("settings") }
             )
         }
         composable("my_breakdowns") {

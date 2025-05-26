@@ -78,18 +78,9 @@ fun DashboardScreen(
                     MenuItemRow("History", AndroidR.drawable.ic_menu_recent_history) {
                         scope.launch { drawerState.close() }
                     }
-                    MenuItemRow("Equipment", AndroidR.drawable.ic_menu_manage) {
-                        scope.launch { drawerState.close() }
-                    }
                     MenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add) {
                         scope.launch { drawerState.close() }
                         onNavigateToAssignments()
-                    }
-                    MenuItemRow("Technical Reports", AndroidR.drawable.ic_menu_edit) {
-                        scope.launch { drawerState.close() }
-                    }
-                    MenuItemRow("Parts & Materials", AndroidR.drawable.ic_menu_compass) {
-                        scope.launch { drawerState.close() }
                     }
                     MenuItemRow("Calendar", AndroidR.drawable.ic_menu_month) {
                         scope.launch { drawerState.close() }
@@ -99,9 +90,6 @@ fun DashboardScreen(
                         onOpenSettings()
                     }
                     MenuItemRow("Help/Support", AndroidR.drawable.ic_menu_help) {
-                        scope.launch { drawerState.close() }
-                    }
-                    MenuItemRow("Logout", AndroidR.drawable.ic_menu_close_clear_cancel) {
                         scope.launch { drawerState.close() }
                     }
                 }
