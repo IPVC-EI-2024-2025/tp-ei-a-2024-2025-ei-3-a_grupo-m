@@ -1,14 +1,28 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    id("com.google.dagger.hilt.android")
-    kotlin("kapt")
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
+}
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { input ->
+        localProperties.load(input)
+    }
 }
 
 android {
     namespace = "com.example.project_we_fix_it"
     compileSdk = 35
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.example.project_we_fix_it"
@@ -18,6 +32,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SUPABASE_URL", "\"${localProperties["SUPABASE_URL"]}\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"${localProperties["SUPABASE_KEY"]}\"")
     }
 
     buildTypes {
@@ -38,15 +55,28 @@ android {
     }
 }
 
+// Optional: Enable aggregating task for better build performance
+hilt {
+    enableAggregatingTask = true
+}
+
 dependencies {
+    implementation(platform(libs.bom))
+    implementation(libs.postgrest.kt)
+    implementation(libs.auth.kt)
+    implementation(libs.realtime.kt)
+    implementation(libs.storage.kt)
+
     implementation(libs.androidx.navigation.compose)
 
+    // Hilt dependencies - using KSP
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
+    ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.hilt.navigation.compose)
-    kapt(libs.androidx.hilt.compiler)
 
+    //Ktor
+    implementation(libs.ktor.client.android)
     // Core Android
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -67,11 +97,10 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // Room
+    // Room - keep using KSP for Room as it supports it
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    implementation(libs.androidx.activity)
-    implementation(libs.androidx.material3.android)
+    ksp(libs.room.compiler) // Room can use KSP
 
     // Retrofit
     implementation(libs.retrofit)
@@ -85,5 +114,6 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.espresso.core)
 
-
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.material3.android)
 }

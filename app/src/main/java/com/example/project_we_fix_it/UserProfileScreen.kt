@@ -202,7 +202,7 @@ fun UserProfileScreen(
                     color = Color.Gray
                 )
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 16.dp),

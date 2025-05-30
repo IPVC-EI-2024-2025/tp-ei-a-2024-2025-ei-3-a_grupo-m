@@ -155,7 +155,7 @@ fun SettingsScreen(
                         onClick = { /* Open language selection */ }
                     )
 
-                    Divider(thickness = 1.dp, color = Color.LightGray)
+                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
                     // Notifications Settings
                     SettingsItem(
@@ -165,7 +165,7 @@ fun SettingsScreen(
                         onClick = { /* Open notification settings */ }
                     )
 
-                    Divider(thickness = 1.dp, color = Color.LightGray)
+                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
                     SettingsItem(
                         title = "Account Settings",
@@ -174,7 +174,7 @@ fun SettingsScreen(
                         onClick = { /* Open account settings */ }
                     )
 
-                    Divider(thickness = 1.dp, color = Color.LightGray)
+                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
                     Row(
                         modifier = Modifier
@@ -208,7 +208,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    Divider(thickness = 1.dp, color = Color.LightGray)
+                    HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
                     Row(
                         modifier = Modifier
