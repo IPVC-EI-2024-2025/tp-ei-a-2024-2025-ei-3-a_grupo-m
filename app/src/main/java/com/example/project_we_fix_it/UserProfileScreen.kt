@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,9 +10,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +23,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.composables.ProfileInfoItem
+import com.example.project_we_fix_it.composables.ProfileMenuItemRow
 import kotlinx.coroutines.launch
 import android.R as AndroidR
 
@@ -32,10 +38,72 @@ fun UserProfileScreen(
     onNavigateToHome: () -> Unit,
     onOpenSettings: () -> Unit,
     onNavigateToNotifications: () -> Unit,
-    onNavigateToEditProfile: () -> Unit
+    onNavigateToEditProfile: () -> Unit,
+    onLogout: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    if (authState.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF5C5CFF))
+        }
+        return
+    }
+
+    // Handle logout only when auth state changes to logged out
+    LaunchedEffect(authState.isLoggedIn) {
+        if (!authState.isLoggedIn && !authState.isLoading) {
+            onLogout()
+        }
+    }
+
+    // Logout confirmation dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Logout") },
+            text = { Text("Are you sure you want to logout?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        authViewModel.logout()
+                    }
+                ) {
+                    Text("Yes", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLogoutDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Loading state
+    if (authState.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF5C5CFF))
+        }
+        return
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -52,13 +120,21 @@ fun UserProfileScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
+                    ProfileMenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
                         onNavigateToHome()
                     }
-                    MenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
+                    ProfileMenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
 
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    // Logout menu item
+                    ProfileMenuItemRow("Logout", AndroidR.drawable.ic_lock_power_off) {
+                        scope.launch { drawerState.close() }
+                        showLogoutDialog = true
                     }
                 }
             }
@@ -87,6 +163,13 @@ fun UserProfileScreen(
                             Icon(
                                 painter = painterResource(id = AndroidR.drawable.ic_menu_preferences),
                                 contentDescription = "Settings"
+                            )
+                        }
+                        IconButton(onClick = { showLogoutDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.ExitToApp,
+                                contentDescription = "Logout",
+                                tint = Color.Red
                             )
                         }
                     },
@@ -163,7 +246,7 @@ fun UserProfileScreen(
                             .border(2.dp, Color.White, CircleShape)
                     ) {
                         Text(
-                            text = "J",
+                            text = authState.userProfile?.name?.firstOrNull()?.uppercase() ?: "U",
                             color = Color.White,
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
@@ -191,13 +274,13 @@ fun UserProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Joaquim",
+                    text = authState.userProfile?.name ?: "User",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "№ 32432",
+                    text = "№ ${authState.user?.id?.take(8) ?: "N/A"}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -218,7 +301,7 @@ fun UserProfileScreen(
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_dialog_email,
                         title = "Email",
-                        value = "Joaquim@email.com"
+                        value = authState.user?.email ?: "Not available"
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -226,53 +309,47 @@ fun UserProfileScreen(
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_manage,
                         title = "Speciality",
-                        value = "Eletrical Technician"
+                        value = authState.userProfile?.role?.replaceFirstChar { it.uppercase() } ?: "Technician"
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_slideshow,
-                        title = "Block",
-                        value = "3ᵃ Block"
+                        title = "Status",
+                        value = authState.userProfile?.status?.replaceFirstChar { it.uppercase() } ?: "Active"
                     )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Logout button at the bottom
+                    OutlinedButton(
+                        onClick = { showLogoutDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color.Red
+                        ),
+                        border = BorderStroke(1.dp, Color.Red),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Logout",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Logout",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-fun ProfileInfoItem(
-    iconResId: Int,
-    title: String,
-    value: String
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Icon(
-            painter = painterResource(id = iconResId),
-            contentDescription = title,
-            tint = Color.Gray,
-            modifier = Modifier.size(24.dp)
-        )
 
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column {
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Text(
-                text = value,
-                fontSize = 16.sp,
-                color = Color.Black
-            )
-        }
-    }
-}

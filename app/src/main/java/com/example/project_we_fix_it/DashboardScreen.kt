@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.project_we_fix_it.composables.BreakdownCard
+import com.example.project_we_fix_it.composables.DashboardMenuItemRow
 import kotlinx.coroutines.launch
 import android.R as AndroidR
 
@@ -60,36 +62,36 @@ fun DashboardScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
+                    DashboardMenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
                     }
-                    MenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
+                    DashboardMenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
                         onNavigateToProfile()
                     }
-                    MenuItemRow("My breakdowns", AndroidR.drawable.ic_menu_report_image) {
+                    DashboardMenuItemRow("My breakdowns", AndroidR.drawable.ic_menu_report_image) {
                         scope.launch { drawerState.close() }
                         navController.navigate("my_breakdowns")
                     }
-                    MenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder) {
+                    DashboardMenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder) {
                         scope.launch { drawerState.close() }
                         onNavigateToNotifications()
                     }
-                    MenuItemRow("History", AndroidR.drawable.ic_menu_recent_history) {
+                    DashboardMenuItemRow("History", AndroidR.drawable.ic_menu_recent_history) {
                         scope.launch { drawerState.close() }
                     }
-                    MenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add) {
+                    DashboardMenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add) {
                         scope.launch { drawerState.close() }
                         onNavigateToAssignments()
                     }
-                    MenuItemRow("Calendar", AndroidR.drawable.ic_menu_month) {
+                    DashboardMenuItemRow("Calendar", AndroidR.drawable.ic_menu_month) {
                         scope.launch { drawerState.close() }
                     }
-                    MenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
+                    DashboardMenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
                         scope.launch { drawerState.close() }
                         onOpenSettings()
                     }
-                    MenuItemRow("Help/Support", AndroidR.drawable.ic_menu_help) {
+                    DashboardMenuItemRow("Help/Support", AndroidR.drawable.ic_menu_help) {
                         scope.launch { drawerState.close() }
                     }
                 }
@@ -317,84 +319,5 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-fun MenuItemRow(
-    title: String,
-    iconRes: Int,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            painter = painterResource(id = iconRes),
-            contentDescription = title,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
 
-@Composable
-fun BreakdownCard(
-    breakdown: BreakdownItem,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = WeFixItGrey
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = breakdown.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = breakdown.description,
-                    fontSize = 14.sp,
-                    color = Color.DarkGray
-                )
-            }
 
-            val priorityColor = when (breakdown.priority) {
-                1 -> Color.Yellow
-                2 -> Color.Red
-                else -> Color.Green
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(16.dp)
-                    .height(16.dp)
-                    .background(priorityColor)
-            )
-        }
-    }
-}

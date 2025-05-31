@@ -18,17 +18,50 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.example.project_we_fix_it.auth.AuthViewModel
 
 @Composable
 fun LoginScreen(
     navController: NavHostController,
     onNavigateToRegister: () -> Unit,
     onNavigateToPasswordRecovery: () -> Unit,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+
+    // Show loading screen during initial auth check
+    if (authState.isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = WeFixItBlue)
+        }
+        return
+    }
+
+    // Navigate to main app when login is successful
+    LaunchedEffect(authState.isLoggedIn) {
+        if (authState.isLoggedIn) {
+            onLoginSuccess()
+        }
+    }
+
+    // Show error if any
+    authState.error?.let { error ->
+        LaunchedEffect(error) {
+            // You can show a snackbar or toast here
+            // For now, it will just be displayed as text
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -51,6 +84,23 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Error display
+        authState.error?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f))
+            ) {
+                Text(
+                    text = error,
+                    color = Color.Red,
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 14.sp
+                )
+            }
+        }
+
         Text(
             text = "Email",
             fontSize = 16.sp,
@@ -63,6 +113,7 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             placeholder = { Text("Insert your email here") },
+            enabled = !authState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
@@ -87,6 +138,7 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             placeholder = { Text("Insert your password here") },
+            enabled = !authState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
@@ -102,7 +154,12 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         TextButton(
-            onClick = onNavigateToPasswordRecovery,
+            onClick = {
+                authViewModel.clearError()
+                authViewModel.logout()
+                onNavigateToPasswordRecovery()
+            },
+            enabled = !authState.isLoading,
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(
@@ -114,7 +171,12 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = onLoginSuccess,
+            onClick = {
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    authViewModel.login(email.trim(), password)
+                }
+            },
+            enabled = !authState.isLoading && email.isNotBlank() && password.isNotBlank(),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
@@ -123,11 +185,19 @@ fun LoginScreen(
             ),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(
-                text = "Login",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
+            if (authState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = "Login",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -139,7 +209,13 @@ fun LoginScreen(
             Text(
                 text = "Don't have an account? "
             )
-            TextButton(onClick = onNavigateToRegister) {
+            TextButton(
+                onClick = {
+                    authViewModel.clearError()
+                    onNavigateToRegister()
+                },
+                enabled = !authState.isLoading
+            ) {
                 Text(
                     text = "Register here!",
                     color = WeFixItBlue

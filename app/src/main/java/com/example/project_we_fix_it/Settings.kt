@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import android.R as AndroidR
+import com.example.project_we_fix_it.composables.DashboardMenuItemRow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,15 +45,15 @@ fun SettingsScreen(
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
 
-                    MenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
+                    DashboardMenuItemRow("Home", AndroidR.drawable.ic_menu_agenda) {
                         scope.launch { drawerState.close() }
                         onNavigateToHome()
                     }
-                    MenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
+                    DashboardMenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
                         onNavigateToProfile()
                     }
-                    MenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
+                    DashboardMenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences) {
                         scope.launch { drawerState.close() }
                     }
                 }

@@ -75,7 +75,8 @@ fun AppNavigation() {
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onOpenSettings = { navController.navigate("settings") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
-                onNavigateToEditProfile = { navController.navigate("edit_profile") }
+                onNavigateToEditProfile = { navController.navigate("edit_profile") },
+                onLogout = { navController.navigate("login") }
             )
         }
         composable("edit_profile") {
