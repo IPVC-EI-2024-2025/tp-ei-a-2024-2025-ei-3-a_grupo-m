@@ -195,4 +195,25 @@ class AuthRepository @Inject constructor() {
             null
         }
     }
+
+    fun getCurrentSession() = client.auth.currentSessionOrNull()
+
+    suspend fun refreshSession(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            client.auth.refreshCurrentSession()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(Exception("Session refresh failed: ${e.message}"))
+        }
+    }
+
+    suspend fun loadSession(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            client.auth.loadFromStorage()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(Exception("Session load failed: ${e.message}"))
+        }
+    }
+
 }

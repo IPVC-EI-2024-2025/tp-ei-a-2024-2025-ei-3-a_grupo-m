@@ -96,6 +96,10 @@ fun AppNavigation() {
                 onNavigateToNotifications = { navController.navigate("notifications") }
             )
         }
+        composable("notifications") {
+            NotificationsScreen(navController = navController) // Assuming you have this Composable
+        }
+
         composable("messages") {
             MessagesScreen(navController = navController)
         }

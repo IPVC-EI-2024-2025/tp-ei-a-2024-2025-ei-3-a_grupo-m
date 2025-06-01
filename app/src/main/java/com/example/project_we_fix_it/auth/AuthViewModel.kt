@@ -34,8 +34,21 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun checkAuthStatus() {
+        _authState.value = AuthState(isLoading = true)
+
         viewModelScope.launch {
             try {
+                authRepository.loadSession()
+
+                if (authRepository.isUserLoggedIn()) {
+                    authRepository.refreshSession().fold(
+                        onSuccess = { /* Session refreshed */ },
+                        onFailure = {
+                            authRepository.logout()
+                        }
+                    )
+                }
+
                 val isLoggedIn = authRepository.isUserLoggedIn()
                 val user = authRepository.getCurrentUser()
                 val userProfile = if (isLoggedIn) authRepository.getCurrentUserProfile() else null
@@ -44,14 +57,13 @@ class AuthViewModel @Inject constructor(
                     isLoading = false,
                     isLoggedIn = isLoggedIn,
                     user = user,
-                    userProfile = userProfile,
-                    error = null
+                    userProfile = userProfile
                 )
             } catch (e: Exception) {
                 _authState.value = AuthState(
                     isLoading = false,
                     isLoggedIn = false,
-                    error = e.message ?: "Unknown error"
+                    error = "Session error: ${e.message}"
                 )
             }
         }
