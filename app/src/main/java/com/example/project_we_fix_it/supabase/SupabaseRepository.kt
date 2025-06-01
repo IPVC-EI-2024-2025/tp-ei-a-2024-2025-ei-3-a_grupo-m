@@ -34,7 +34,12 @@ class SupabaseRepository @Inject constructor() {
     suspend fun updateUserProfile(profile: UserProfile): UserProfile = withContext(Dispatchers.IO) {
         try {
             client.from("user_profiles")
-                .update(profile) {
+                .update({
+                    set("name", profile.name)
+                    set("role", profile.role)
+                    set("phone", profile.phone)
+                    set("location", profile.location)
+                }) {
                     filter {
                         eq("user_id", profile.user_id)
                     }

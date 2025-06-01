@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
@@ -30,7 +31,6 @@ import com.example.project_we_fix_it.composables.ProfileInfoItem
 import com.example.project_we_fix_it.composables.ProfileMenuItemRow
 import kotlinx.coroutines.launch
 import android.R as AndroidR
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
@@ -47,6 +47,13 @@ fun UserProfileScreen(
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     var showLogoutDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(authState.isLoggedIn) {
+        if (!authState.isLoggedIn && !authState.isLoading) {
+            onLogout()
+        }
+    }
+
+    // Loading state
     if (authState.isLoading) {
         Box(
             modifier = Modifier
@@ -59,12 +66,9 @@ fun UserProfileScreen(
         return
     }
 
-    // Handle logout only when auth state changes to logged out
-    LaunchedEffect(authState.isLoggedIn) {
-        if (!authState.isLoggedIn && !authState.isLoading) {
-            onLogout()
-        }
-    }
+    // Get the user profile data
+    val userProfile = authState.userProfile
+    val user = authState.user
 
     // Logout confirmation dialog
     if (showLogoutDialog) {
@@ -92,19 +96,6 @@ fun UserProfileScreen(
         )
     }
 
-    // Loading state
-    if (authState.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color(0xFF5C5CFF))
-        }
-        return
-    }
-
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -115,7 +106,7 @@ fun UserProfileScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Menu - Technicians",
+                        text = "Menu - ${userProfile?.role?.replaceFirstChar { it.uppercase() } ?: "User"}",
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
@@ -126,7 +117,6 @@ fun UserProfileScreen(
                     }
                     ProfileMenuItemRow("Profile", AndroidR.drawable.ic_menu_myplaces) {
                         scope.launch { drawerState.close() }
-
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -167,7 +157,7 @@ fun UserProfileScreen(
                         }
                         IconButton(onClick = { showLogoutDialog = true }) {
                             Icon(
-                                imageVector = Icons.Default.ExitToApp,
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = "Logout",
                                 tint = Color.Red
                             )
@@ -246,7 +236,7 @@ fun UserProfileScreen(
                             .border(2.dp, Color.White, CircleShape)
                     ) {
                         Text(
-                            text = authState.userProfile?.name?.firstOrNull()?.uppercase() ?: "U",
+                            text = userProfile?.name?.firstOrNull()?.uppercase() ?: "U",
                             color = Color.White,
                             fontSize = 36.sp,
                             fontWeight = FontWeight.Bold,
@@ -274,13 +264,13 @@ fun UserProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = authState.userProfile?.name ?: "User",
+                    text = userProfile?.name ?: "User",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "№ ${authState.user?.id?.take(8) ?: "N/A"}",
+                    text = "№ ${user?.id?.take(8) ?: "N/A"}",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -301,15 +291,15 @@ fun UserProfileScreen(
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_dialog_email,
                         title = "Email",
-                        value = authState.user?.email ?: "Not available"
+                        value = user?.email ?: "Not available"
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_manage,
-                        title = "Speciality",
-                        value = authState.userProfile?.role?.replaceFirstChar { it.uppercase() } ?: "Technician"
+                        title = "Role",
+                        value = userProfile?.role?.replaceFirstChar { it.uppercase() } ?: "Technician"
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -317,7 +307,7 @@ fun UserProfileScreen(
                     ProfileInfoItem(
                         iconResId = AndroidR.drawable.ic_menu_slideshow,
                         title = "Status",
-                        value = authState.userProfile?.status?.replaceFirstChar { it.uppercase() } ?: "Active"
+                        value = userProfile?.status?.replaceFirstChar { it.uppercase() } ?: "Active"
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -335,7 +325,7 @@ fun UserProfileScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ExitToApp,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = "Logout",
                             modifier = Modifier.size(20.dp)
                         )
@@ -351,5 +341,4 @@ fun UserProfileScreen(
         }
     }
 }
-
 

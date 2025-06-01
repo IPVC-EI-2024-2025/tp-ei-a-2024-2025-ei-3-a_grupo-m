@@ -28,9 +28,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.supabase.UserProfile
+import com.example.project_we_fix_it.viewModels.UserProfileViewModel
 import android.R as AndroidR
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -38,22 +42,110 @@ fun EditProfileScreen(
     onNavigateToProfile: () -> Unit,
     onBack: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit
+    onNavigateToNotifications: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel(),
+    profileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
-    var name by remember { mutableStateOf("User") }
-    var email by remember { mutableStateOf("user@email.com") }
-    var phoneNumber by remember { mutableStateOf("123-456-7890") }
-    var password by remember { mutableStateOf("password123*") }
+    val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val profileState by profileViewModel.profileState.collectAsStateWithLifecycle()
+    val isLoading by profileViewModel.isLoading.collectAsStateWithLifecycle()
+    val currentProfile = profileState ?: authState.userProfile
+    val user = authState.user
+
+    // Initialize fields with actual user data or empty strings
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var speciality by remember { mutableStateOf("Electrical Technician") }
-    var block by remember { mutableStateOf("3ᵃ Block") }
+    var speciality by remember { mutableStateOf("") }
+    var block by remember { mutableStateOf("") }
 
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showSaveSuccess by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { profileImageUri = it }
+    }
+
+    LaunchedEffect(currentProfile, user) {
+        name = currentProfile?.name ?: ""
+        email = user?.email ?: ""
+        phoneNumber = currentProfile?.phone ?: ""
+        speciality = currentProfile?.role ?: ""
+        block = currentProfile?.location ?: ""
+    }
+
+
+    fun saveProfile() {
+        val updatedProfile = currentProfile?.copy(
+            name = name,
+            phone = phoneNumber,
+            role = speciality,
+            location = block
+        ) ?: UserProfile(
+            user_id = user?.id ?: "",
+            name = name,
+            phone = phoneNumber,
+            role = speciality,
+            location = block,
+            status = currentProfile?.status ?: "active"
+        )
+
+        profileViewModel.updateProfile(updatedProfile)
+        showSaveSuccess = true
+    }
+
+
+    if (isLoading) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White.copy(alpha = 0.8f)),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF5C5CFF))
+        }
+    }
+
+    profileViewModel.error.collectAsStateWithLifecycle().value?.let { error ->
+        AlertDialog(
+            onDismissRequest = { profileViewModel.clearError() },
+            title = { Text("Error") },
+            text = { Text(error) },
+            confirmButton = {
+                TextButton(
+                    onClick = { profileViewModel.clearError() }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+
+
+    if (showSaveSuccess) {
+        AlertDialog(
+            onDismissRequest = {
+                showSaveSuccess = false
+                onBack()
+            },
+            title = { Text("Profile Updated") },
+            text = { Text("Your profile has been successfully updated.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSaveSuccess = false
+                        onBack()
+                    }
+                ) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -67,10 +159,8 @@ fun EditProfileScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateToProfile) {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -146,7 +236,7 @@ fun EditProfileScreen(
                         .border(2.dp, Color.White, CircleShape)
                 ) {
                     Text(
-                        text = "U",
+                        text = name.firstOrNull()?.uppercase() ?: "U",
                         color = Color.White,
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
@@ -175,7 +265,7 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "№ 32432",
+                text = "№ ${user?.id?.take(8) ?: "N/A"}",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
@@ -190,6 +280,7 @@ fun EditProfileScreen(
                 ProfileTextField(
                     label = "Name",
                     value = name,
+                    placeholder = currentProfile?.name ?: "Name not defined",
                     onValueChange = { name = it },
                     iconResId = AndroidR.drawable.ic_menu_myplaces
                 )
@@ -199,8 +290,10 @@ fun EditProfileScreen(
                 ProfileTextField(
                     label = "Email",
                     value = email,
+                    placeholder = user?.email ?: "Email not defined" ,
                     onValueChange = { email = it },
-                    iconResId = AndroidR.drawable.ic_dialog_email
+                    iconResId = AndroidR.drawable.ic_dialog_email,
+                    enabled = false // Email shouldn't be editable directly
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -208,6 +301,7 @@ fun EditProfileScreen(
                 ProfileTextField(
                     label = "Phone Number",
                     value = phoneNumber,
+                    placeholder = currentProfile?.phone ?: "Phone not defined",
                     onValueChange = { phoneNumber = it },
                     iconResId = AndroidR.drawable.ic_menu_call
                 )
@@ -217,7 +311,7 @@ fun EditProfileScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
+                    label = { Text("New Password (leave empty to keep current)") },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
@@ -250,6 +344,7 @@ fun EditProfileScreen(
                 ProfileTextField(
                     label = "Speciality",
                     value = speciality,
+                    placeholder = currentProfile?.role ?: "Speciality not defined",
                     onValueChange = { speciality = it },
                     iconResId = AndroidR.drawable.ic_menu_manage
                 )
@@ -257,8 +352,9 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 ProfileTextField(
-                    label = "Block",
+                    label = "Block/Location",
                     value = block,
+                    placeholder = currentProfile?.location ?: "Block/Location not defined",
                     onValueChange = { block = it },
                     iconResId = AndroidR.drawable.ic_menu_slideshow
                 )
@@ -266,7 +362,7 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Button(
-                    onClick = onNavigateToProfile,
+                    onClick = { saveProfile() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
@@ -292,12 +388,15 @@ fun ProfileTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    iconResId: Int
+    iconResId: Int,
+    placeholder: String = "",
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        placeholder = { Text(placeholder) },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = {
             Icon(
@@ -307,6 +406,7 @@ fun ProfileTextField(
             )
         },
         singleLine = true,
+        enabled = enabled,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color(0xFF5C5CFF),
             unfocusedBorderColor = Color.LightGray

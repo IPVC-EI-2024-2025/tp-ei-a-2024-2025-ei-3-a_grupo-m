@@ -8,7 +8,9 @@ data class UserProfile(
     val name: String,
     val role: String, // 'admin', 'technician', 'manager'
     val status: String = "active", // 'active', 'inactive'
-    val created_at: String? = null
+    val created_at: String? = null,
+    val phone: String? = null,
+    val location: String? = null
 )
 
 @Serializable
