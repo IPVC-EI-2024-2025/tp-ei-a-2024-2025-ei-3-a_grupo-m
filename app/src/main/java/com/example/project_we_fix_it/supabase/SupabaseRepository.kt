@@ -1,5 +1,7 @@
 package com.example.project_we_fix_it.supabase
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import com.example.project_we_fix_it.supabase.SupabaseClient
 import com.example.project_we_fix_it.supabase.*
 import io.github.jan.supabase.postgrest.from
@@ -19,20 +21,25 @@ class SupabaseRepository @Inject constructor() {
     // ========== USER PROFILES ==========
     suspend fun getUserProfile(userId: String): UserProfile? = withContext(Dispatchers.IO) {
         try {
+            Log.d(TAG, "Fetching profile for user: $userId")
             client.from("user_profiles")
                 .select {
-                    filter {
-                        eq("user_id", userId)
+                    filter { eq("user_id", userId)
                     }
                 }
                 .decodeSingleOrNull()
         } catch (e: Exception) {
+            Log.e(TAG, "Error fetching profile for $userId: ${e.message}")
             null
         }
     }
 
+
     suspend fun updateUserProfile(profile: UserProfile): UserProfile = withContext(Dispatchers.IO) {
         try {
+            Log.d(TAG, "Updating profile for user: ${profile.user_id}")
+            Log.d(TAG, "New profile data: name=${profile.name}, role=${profile.role}, phone=${profile.phone}")
+
             client.from("user_profiles")
                 .update({
                     set("name", profile.name)
@@ -40,12 +47,12 @@ class SupabaseRepository @Inject constructor() {
                     set("phone", profile.phone)
                     set("location", profile.location)
                 }) {
-                    filter {
-                        eq("user_id", profile.user_id)
-                    }
+                    filter { eq("user_id", profile.user_id) }
                 }
                 .decodeSingle()
+
         } catch (e: Exception) {
+            Log.e(TAG, "Error updating profile: ${e.stackTraceToString()}")
             throw Exception("Error updating user profile: ${e.message}")
         }
     }

@@ -1,6 +1,7 @@
 package com.example.project_we_fix_it
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 
@@ -34,6 +35,7 @@ import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.UserProfileViewModel
+import kotlinx.coroutines.launch
 import android.R as AndroidR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,11 +48,14 @@ fun EditProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     profileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
+    val TAG = "EditProfileScreen"
+
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val profileState by profileViewModel.profileState.collectAsStateWithLifecycle()
     val isLoading by profileViewModel.isLoading.collectAsStateWithLifecycle()
     val currentProfile = profileState ?: authState.userProfile
     val user = authState.user
+    val coroutineScope = rememberCoroutineScope()
 
     // Initialize fields with actual user data or empty strings
     var name by remember { mutableStateOf("") }
@@ -80,6 +85,7 @@ fun EditProfileScreen(
 
 
     fun saveProfile() {
+        Log.d(TAG, "saveProfile() called")
         val updatedProfile = currentProfile?.copy(
             name = name,
             phone = phoneNumber,
@@ -94,8 +100,15 @@ fun EditProfileScreen(
             status = currentProfile?.status ?: "active"
         )
 
+        Log.d(TAG, "Updating profile with: $updatedProfile")
         profileViewModel.updateProfile(updatedProfile)
+
+        coroutineScope.launch {
+            Log.d(TAG, "Refreshing auth state...")
+            authViewModel.loadUserProfile()
+        }
         showSaveSuccess = true
+        Log.d(TAG, "Profile update flow completed")
     }
 
 

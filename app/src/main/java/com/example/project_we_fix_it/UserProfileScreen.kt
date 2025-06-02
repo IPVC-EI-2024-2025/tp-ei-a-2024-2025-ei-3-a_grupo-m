@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -52,8 +53,11 @@ fun UserProfileScreen(
             onLogout()
         }
     }
+    LaunchedEffect(navController.currentBackStackEntry) {
+        Log.d("ProfileScreen", "Reloading profile data")
+        authViewModel.loadUserProfile()
+    }
 
-    // Loading state
     if (authState.isLoading) {
         Box(
             modifier = Modifier

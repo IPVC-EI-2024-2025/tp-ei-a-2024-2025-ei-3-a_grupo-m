@@ -1,13 +1,16 @@
 package com.example.project_we_fix_it.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.user.UserInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,10 +27,12 @@ data class AuthState(
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-
+    private val TAG = "AuthVM"
     // Initialize with loading state
     private val _authState = MutableStateFlow(AuthState(isLoading = true))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
+    private val supabaseRepository = SupabaseRepository()
 
     init {
         checkAuthStatus()
@@ -164,7 +169,32 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun loadUserProfile() {
+        Log.d(TAG, "loadUserProfile() called")
+        viewModelScope.launch {
+            try {
+                _authState.value.user?.id?.let { userId ->
+                    Log.d(TAG, "Loading profile for user: $userId")
+                    val profile = supabaseRepository.getUserProfile(userId)
+                    Log.d(TAG, "Profile loaded: ${profile?.name}")
+
+                    _authState.update { currentState ->
+                        currentState.copy(userProfile = profile)
+                    }
+                    Log.d(TAG, "AuthState updated with new profile")
+                } ?: run {
+                    Log.w(TAG, "No user ID available to load profile")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading profile: ${e.stackTraceToString()}")
+            }
+        }
+    }
+
+
     fun clearError() {
         _authState.value = _authState.value.copy(error = null)
     }
+
+
 }
