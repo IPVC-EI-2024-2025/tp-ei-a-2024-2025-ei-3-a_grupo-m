@@ -12,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-
+import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,49 +25,27 @@ fun BreakdownReportingScreen(
     onSave: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit
+    onNavigateToNotifications: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onNavigateToAssignments: () -> Unit,
+    onNavigateToBreakdownReporting: () -> Unit,
+    onLogout: () -> Unit,
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Report Breakdown") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = Color.White,
-                contentColor = Color.Black
-            ) {
-                NavigationBar(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ) {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, "Profile") },
-                        label = { Text("Profile") },
-                        selected = false,
-                        onClick = onNavigateToProfile
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, "Home") },
-                        label = { Text("Home") },
-                        selected = false,
-                        onClick = onNavigateToHome
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Notifications, "Notifications") },
-                        label = { Text("Notifications") },
-                        selected = false,
-                        onClick = onNavigateToNotifications
-                    )
-                }
-            }
-        }
+    WeFixItAppScaffold(
+        title = "Report Breakdown",
+        currentRoute = "breakdown_reporting",
+        navController = navController,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToHome = onNavigateToHome,
+        onOpenSettings = onOpenSettings,
+        onNavigateToNotifications = onNavigateToNotifications,
+        onNavigateToAssignments = onNavigateToAssignments,
+        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
+        onLogout = onLogout,
+        authViewModel = authViewModel,
+        showBackButton = true,
+        onBackClick = onBack
     ) { padding ->
         Column(
             modifier = Modifier

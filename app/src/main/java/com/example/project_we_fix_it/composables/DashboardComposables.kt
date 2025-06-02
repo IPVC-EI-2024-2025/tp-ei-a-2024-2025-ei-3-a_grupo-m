@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project_we_fix_it.BreakdownItem
@@ -55,58 +56,41 @@ fun DashboardMenuItemRow(
     }
 }
 
+
 @Composable
 fun BreakdownCard(
     breakdown: BreakdownItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    trailingContent: @Composable () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = WeFixItGrey
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
+        colors = CardDefaults.cardColors(containerColor = WeFixItGrey),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceBetween
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = breakdown.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = breakdown.description,
-                    fontSize = 14.sp,
-                    color = Color.DarkGray
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-
-            val priorityColor = when (breakdown.priority) {
-                1 -> Color.Yellow
-                2 -> Color.Red
-                else -> Color.Green
-            }
-
-            Box(
-                modifier = Modifier
-                    .width(16.dp)
-                    .height(16.dp)
-                    .background(priorityColor)
-            )
+            trailingContent()
         }
     }
 }

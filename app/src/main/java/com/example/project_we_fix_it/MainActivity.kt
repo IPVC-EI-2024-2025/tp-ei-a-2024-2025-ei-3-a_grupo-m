@@ -66,7 +66,8 @@ fun AppNavigation() {
                 onOpenChat = { navController.navigate("messages") },
                 onNavigateToBreakdownReporting = { navController.navigate("report") },
                 onNavigateToAssignments = { navController.navigate("assignments") },
-                onOpenMenu = { /* Show menu */ }
+                onNavigateToHome = { navController.navigate("dashboard") },
+                onLogout = { navController.navigate("login") }
             )
         }
         composable("profile") {
@@ -76,8 +77,12 @@ fun AppNavigation() {
                 onOpenSettings = { navController.navigate("settings") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
                 onNavigateToEditProfile = { navController.navigate("edit_profile") },
-                onLogout = { navController.navigate("login") }
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onLogout = { navController.navigate("login") },
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") }
             )
+
         }
         composable("edit_profile") {
             EditProfileScreen(
@@ -93,7 +98,11 @@ fun AppNavigation() {
                 navController = navController,
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToNotifications = { navController.navigate("notifications") }
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onLogout = { navController.navigate("login") }
             )
         }
         composable("notifications") {
@@ -101,12 +110,28 @@ fun AppNavigation() {
         }
 
         composable("messages") {
-            MessagesScreen(navController = navController)
+            MessagesScreen(
+                navController = navController,
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.popBackStack("dashboard", false) },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onLogout = { navController.navigate("login") },
+            )
         }
         composable("chat/{chatId}") { backStackEntry ->
             ChatScreen(
                 navController = navController,
-                chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+                chatId = backStackEntry.arguments?.getString("chatId") ?: "",
+                onNavigateToProfile = { navController.navigate("profile") },
+                onNavigateToHome = { navController.popBackStack("dashboard", false) },
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onLogout = { navController.navigate("login") },
             )
         }
         composable("report") {
@@ -116,7 +141,11 @@ fun AppNavigation() {
                 onSave = { /* Save and navigate */ },
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") }
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onLogout = { navController.navigate("login") },
             )
         }
         composable("breakdown/{id}") { backStackEntry ->
@@ -126,7 +155,11 @@ fun AppNavigation() {
                 onSave = { /* Save and navigate */ },
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") }
+                onNavigateToNotifications = { navController.navigate("notifications") },
+                onOpenSettings = { navController.navigate("settings") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") },
+                onLogout = { navController.navigate("login") },
             )
         }
         composable("assignments") {
@@ -136,7 +169,11 @@ fun AppNavigation() {
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
                 onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") },
-                onOpenSettings = { navController.navigate("settings") }
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onOpenSettings = { navController.navigate("settings") },
+                onLogout = { navController.navigate("login") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") }
+
             )
         }
         composable("my_breakdowns") {
@@ -146,7 +183,11 @@ fun AppNavigation() {
                 onNavigateToProfile = { navController.navigate("profile") },
                 onNavigateToHome = { navController.navigate("dashboard") },
                 onNavigateToNotifications = { navController.navigate("notifications") },
-                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") }
+                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") },
+                onOpenSettings = { navController.navigate("settings") },
+                onLogout = { navController.navigate("login") },
+                onNavigateToAssignments = { navController.navigate("assignments") },
+                onNavigateToBreakdownReporting = { navController.navigate("report") }
             )
         }
     }

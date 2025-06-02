@@ -17,70 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MessagesScreen(
-    navController: NavController,
-    viewModel: ChatViewModel = hiltViewModel()
-) {
-    val chats by viewModel.chats.collectAsState()
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Messages") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = Color.White,
-                contentColor = Color.Black
-            ) {
-                NavigationBar(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ) {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Person, "Profile") },
-                        label = { Text("Profile") },
-                        selected = false,
-                        onClick = { navController.navigate("profile") }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Home, "Home") },
-                        label = { Text("Home") },
-                        selected = false,
-                        onClick = { navController.popBackStack("dashboard", false) }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Notifications, "Notifications") },
-                        label = { Text("Notifications") },
-                        selected = false,
-                        onClick = { navController.navigate("notifications") }
-                    )
-                }
-            }
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            items(chats) { chat ->
-                ChatItem(chat = chat) {
-                    navController.navigate("chat/${chat.id}")
-                }
-            }
-        }
-    }
-}
+import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 
 @Composable
 fun ChatItem(chat: Chat, onClick: () -> Unit) {
@@ -110,6 +48,51 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = chat.lastMessage)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessagesScreen(
+    navController: NavController,
+    onNavigateToProfile: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToNotifications: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onNavigateToAssignments: () -> Unit,
+    onNavigateToBreakdownReporting: () -> Unit,
+    onLogout: () -> Unit,
+    viewModel: ChatViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
+) {
+    val chats by viewModel.chats.collectAsState()
+
+    WeFixItAppScaffold(
+        title = "Messages",
+        currentRoute = "messages",
+        navController = navController,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToHome = onNavigateToHome,
+        onOpenSettings = onOpenSettings,
+        onNavigateToNotifications = onNavigateToNotifications,
+        onNavigateToAssignments = onNavigateToAssignments,
+        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
+        onLogout = onLogout,
+        authViewModel = authViewModel,
+        showBackButton = true,
+        onBackClick = { navController.popBackStack() }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            items(chats) { chat ->
+                ChatItem(chat = chat) {
+                    navController.navigate("chat/${chat.id}")
+                }
+            }
         }
     }
 }

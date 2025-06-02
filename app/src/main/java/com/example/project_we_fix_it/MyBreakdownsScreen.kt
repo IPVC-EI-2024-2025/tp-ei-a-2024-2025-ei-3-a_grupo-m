@@ -18,9 +18,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.ui.theme.WeFixItGrey
+import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import android.R as AndroidR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,8 +34,13 @@ fun MyBreakdownsScreen(
     onNavigateToProfile: () -> Unit,
     onNavigateToHome: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onNavigateToAssignments: () -> Unit,
+    onNavigateToBreakdownReporting: () -> Unit,
+    onLogout: () -> Unit,
     onBreakdownClick: (String) -> Unit,
-    viewModel: MyBreakdownsViewModel = viewModel()
+    viewModel: MyBreakdownsViewModel = viewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val breakdowns by viewModel.myBreakdowns.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -41,78 +49,26 @@ fun MyBreakdownsScreen(
         viewModel.loadMyBreakdowns()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "My Breakdowns",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {}) {
-                        Icon(
-                            painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
-                            contentDescription = "Filter"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
+    WeFixItAppScaffold(
+        title = "My Breakdowns",
+        currentRoute = "my_breakdowns",
+        navController = navController,
+        onNavigateToProfile = onNavigateToProfile,
+        onNavigateToHome = onNavigateToHome,
+        onOpenSettings = onOpenSettings,
+        onNavigateToNotifications = onNavigateToNotifications,
+        onNavigateToAssignments = onNavigateToAssignments,
+        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
+        onLogout = onLogout,
+        authViewModel = authViewModel,
+        showBackButton = true,
+        onBackClick = onBack,
+        actions = {
+            IconButton(onClick = { /* Handle filter action */ }) {
+                Icon(
+                    painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
+                    contentDescription = "Filter"
                 )
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = Color.White,
-                contentColor = Color.Black,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBar(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ) {
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_menu_myplaces),
-                                contentDescription = "Profile"
-                            )
-                        },
-                        label = { Text("Profile") },
-                        selected = false,
-                        onClick = onNavigateToProfile
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_menu_agenda),
-                                contentDescription = "Home"
-                            )
-                        },
-                        label = { Text("Home") },
-                        selected = false,
-                        onClick = onNavigateToHome
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_popup_reminder),
-                                contentDescription = "Notifications"
-                            )
-                        },
-                        label = { Text("Notifications") },
-                        selected = false,
-                        onClick = onNavigateToNotifications
-                    )
-                }
             }
         }
     ) { padding ->
