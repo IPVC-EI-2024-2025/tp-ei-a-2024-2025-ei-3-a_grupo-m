@@ -24,6 +24,9 @@ activity = "1.10.1"
 kotlin = "2.1.0"
 material3-android = "1.3.2"
 ksp = "2.1.0-1.0.29"
+generativeai = "0.9.0"
+core = "1.13.0"
+compose-material-icons = "1.6.4"
 
 [libraries]
 # Core Android
@@ -40,6 +43,9 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor-client-android" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "compose-material-icons" }
+compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "compose-material-icons" }
 
 # Navigation
 navigation-fragment-ktx = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
@@ -79,6 +85,8 @@ androidx-material3-android = { group = "androidx.compose.material3", name = "mat
 
 ksp-hilt = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt-android" }
 ksp-room = { module = "androidx.room:room-compiler", version.ref = "room" }
+generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
+androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
 
 [plugins]
 android-application = { id = "com.android.application", version = "8.8.0" }

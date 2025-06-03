@@ -7,10 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.project_we_fix_it.nav.AppNavigator
+import com.example.project_we_fix_it.nav.Routes
 import com.example.project_we_fix_it.ui.theme.ProjectWeFixItTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -34,162 +38,102 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navigator = remember { AppNavigator(navController) }
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
+    NavHost(navController = navController, startDestination = Routes.LOGIN) {
+        composable(Routes.LOGIN) {
             LoginScreen(
+                onNavigateToRegister = navigator::navigateToRegister,
+                onNavigateToPasswordRecovery = navigator::navigateToPasswordRecovery,
+                onLoginSuccess = navigator::navigateToDashboard,
                 navController = navController,
-                onNavigateToRegister = { navController.navigate("register") },
-                onNavigateToPasswordRecovery = { navController.navigate("password_recovery") },
-                onLoginSuccess = { navController.navigate("dashboard") }
+                authViewModel = hiltViewModel()
             )
         }
-        composable("register") {
+        composable(Routes.REGISTER) {
             RegisterScreen(
+                onNavigateToLogin = navigator::navigateToLogin,
+                onRegisterSuccess = navigator::navigateToLogin,
                 navController = navController,
-                onNavigateToLogin = { navController.navigate("login") },
-                onRegisterSuccess = { navController.navigate("login") }
+                authViewModel = hiltViewModel()
             )
         }
-        composable("password_recovery") {
+        composable(Routes.PASSWORD_RECOVERY) {
             PasswordRecoveryScreen(
+                onNavigateToLogin = navigator::navigateToLogin,
                 navController = navController,
-                onNavigateToLogin = { navController.navigate("login") }
+                authViewModel = hiltViewModel()
             )
         }
-        composable("dashboard") {
+        composable(Routes.DASHBOARD) {
             DashboardScreen(
-                navController = navController,
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onOpenChat = { navController.navigate("messages") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onLogout = { navController.navigate("login") }
+                commonActions = navigator.getCommonActions(),
             )
         }
-        composable("profile") {
+        composable(Routes.PROFILE) {
             UserProfileScreen(
-                navController = navController,
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onNavigateToEditProfile = { navController.navigate("edit_profile") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onLogout = { navController.navigate("login") },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") }
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                onNavigateToEditProfile = navigator::navigateToEditProfile
             )
-
         }
-        composable("edit_profile") {
+        composable(Routes.EDIT_PROFILE) {
             EditProfileScreen(
+                commonActions = navigator.getCommonActions(showBackButton = true),
                 navController = navController,
-                onNavigateToProfile = { navController.popBackStack() },
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onBack = { navController.popBackStack() },
-                )
+                onNavigateToProfile = navigator::navigateToProfile,
+                onBack = navigator::popBackStack,
+                onNavigateToHome = navigator::navigateToDashboard,
+                onNavigateToNotifications = navigator::navigateToNotifications
+            )
         }
-        composable("settings") {
+        composable(Routes.SETTINGS) {
             SettingsScreen(
-                navController = navController,
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onLogout = { navController.navigate("login") }
+                commonActions = navigator.getCommonActions(showBackButton = true)
             )
         }
-        composable("notifications") {
-            NotificationsScreen(navController = navController) // Assuming you have this Composable
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(
+                commonActions = navigator.getCommonActions(showBackButton = true)
+            )
         }
-
-        composable("messages") {
+        composable(Routes.MESSAGES) {
             MessagesScreen(
-                navController = navController,
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onLogout = { navController.navigate("login") },
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                navigator = navigator,
             )
         }
-        composable("chat/{chatId}") { backStackEntry ->
+        composable(Routes.CHAT) { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: ""
+            println("ChatScreen opened with ID: $chatId")
             ChatScreen(
-                navController = navController,
-                chatId = backStackEntry.arguments?.getString("chatId") ?: "",
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onLogout = { navController.navigate("login") },
+                chatId = chatId,
+                commonActions = navigator.getCommonActions(showBackButton = true)
             )
         }
-        composable("report") {
+        composable(Routes.BREAKDOWN_REPORTING) {
             BreakdownReportingScreen(
-                navController = navController,
-                onBack = { navController.popBackStack() },
-                onSave = { /* Save and navigate */ },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onLogout = { navController.navigate("login") },
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                onSave = { /* Handle save */ }
             )
         }
-        composable("breakdown/{id}") { backStackEntry ->
+        composable(Routes.BREAKDOWN_DETAILS) { backStackEntry ->
             BreakdownDetailsScreen(
-                navController = navController,
-                onBack = { navController.popBackStack() },
-                onSave = { /* Save and navigate */ },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.popBackStack("dashboard", false) },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onOpenSettings = { navController.navigate("settings") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") },
-                onLogout = { navController.navigate("login") },
+                breakdownId = backStackEntry.arguments?.getString("id") ?: "",
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                onSave = { /* Handle save */ }
             )
         }
-        composable("assignments") {
+        composable(Routes.ASSIGNMENTS) {
             MyAssignmentsScreen(
-                navController = navController,
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onOpenSettings = { navController.navigate("settings") },
-                onLogout = { navController.navigate("login") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") }
-
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                onBreakdownClick = navigator::navigateToBreakdownDetails
             )
         }
-        composable("my_breakdowns") {
+        composable(Routes.MY_BREAKDOWNS) {
             MyBreakdownsScreen(
-                navController = navController,
-                onBack = { navController.popBackStack() },
-                onNavigateToProfile = { navController.navigate("profile") },
-                onNavigateToHome = { navController.navigate("dashboard") },
-                onNavigateToNotifications = { navController.navigate("notifications") },
-                onBreakdownClick = { breakdownId -> navController.navigate("breakdown/$breakdownId") },
-                onOpenSettings = { navController.navigate("settings") },
-                onLogout = { navController.navigate("login") },
-                onNavigateToAssignments = { navController.navigate("assignments") },
-                onNavigateToBreakdownReporting = { navController.navigate("report") }
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                onBreakdownClick = navigator::navigateToBreakdownDetails
             )
         }
     }
 }
-

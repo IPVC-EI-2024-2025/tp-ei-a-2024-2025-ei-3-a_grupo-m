@@ -17,24 +17,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.composables.BreakdownCard
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.CommonScreenActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenChat: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onLogout: () -> Unit,
-    navController: NavController,
-    viewModel: DashboardViewModel = viewModel()
+    commonActions: CommonScreenActions,
+    viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val bottomSheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -43,14 +35,16 @@ fun DashboardScreen(
     WeFixItAppScaffold(
         title = "Home",
         currentRoute = "home",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onLogout = commonActions.logout,
+        authViewModel = hiltViewModel()
     ) { padding ->
         Box {
             Column(
@@ -66,20 +60,32 @@ fun DashboardScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(breakdowns) { breakdown ->
-                        BreakdownCard(
-                            breakdown = breakdown,
-                            onClick = {
-                                navController.navigate("breakdown/${breakdown.id}")
-                            }
-                        )
+                if (breakdowns.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No active breakdowns found")
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(breakdowns) { breakdown ->
+                            BreakdownCard(
+                                breakdown = breakdown,
+                                onClick = {
+                                    commonActions.navigateToBreakdownDetails(breakdown.id)
+                                }
+                            )
+                        }
                     }
                 }
 
+                // Bottom sheet handle
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -108,7 +114,7 @@ fun DashboardScreen(
                 ModalBottomSheet(
                     onDismissRequest = { showBottomSheet = false },
                     sheetState = bottomSheetState,
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     dragHandle = {
                         Box(
                             modifier = Modifier
@@ -132,14 +138,14 @@ fun DashboardScreen(
                     ) {
                         Button(
                             onClick = {
-                                onNavigateToBreakdownReporting()
+                                commonActions.navigateToBreakdownReporting()
                                 showBottomSheet = false
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF5C5CFF)
+                                containerColor = MaterialTheme.colorScheme.primary
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -154,14 +160,14 @@ fun DashboardScreen(
 
                         Button(
                             onClick = {
-                                onNavigateToAssignments()
+                                commonActions.navigateToAssignments()
                                 showBottomSheet = false
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF5C5CFF)
+                                containerColor = MaterialTheme.colorScheme.primary
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -179,5 +185,3 @@ fun DashboardScreen(
         }
     }
 }
-
-

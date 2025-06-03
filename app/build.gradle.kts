@@ -72,6 +72,8 @@ dependencies {
 
     // Hilt dependencies - using KSP
     implementation(libs.hilt.android)
+    implementation(libs.generativeai)
+    implementation(libs.androidx.core)
     ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.hilt.navigation.compose)
@@ -119,4 +121,8 @@ dependencies {
 
     implementation(libs.androidx.activity)
     implementation(libs.androidx.material3.android)
+
+    implementation(libs.compose.material.icons.core)
+    implementation(libs.compose.material.icons.extended)
+
 }

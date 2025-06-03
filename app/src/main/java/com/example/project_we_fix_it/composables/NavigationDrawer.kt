@@ -16,6 +16,7 @@ fun WeFixItNavigationDrawer(
     onNotificationsClick: () -> Unit,
     onAssignmentsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onMessagesClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -36,6 +37,7 @@ fun WeFixItNavigationDrawer(
         DashboardMenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder, onNotificationsClick)
         DashboardMenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add, onAssignmentsClick)
         DashboardMenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences, onSettingsClick)
+        DashboardMenuItemRow("Messages", AndroidR.drawable.ic_menu_search, onMessagesClick)
 
         Spacer(modifier = Modifier.weight(1f))
 

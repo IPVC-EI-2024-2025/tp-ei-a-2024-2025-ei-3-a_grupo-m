@@ -4,9 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +16,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.AppNavigator
+import com.example.project_we_fix_it.nav.CommonScreenActions
 
 @Composable
 fun ChatItem(chat: Chat, onClick: () -> Unit) {
@@ -38,7 +37,8 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
             ) {
                 Text(
                     text = chat.participantNames.filter { it != "You" }.joinToString(),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
                 )
                 Text(
                     text = chat.lastMessageTime,
@@ -47,22 +47,19 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = chat.lastMessage)
+            Text(
+                text = chat.lastMessage,
+                maxLines = 1,
+                color = Color.Gray
+            )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
-    navController: NavController,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onLogout: () -> Unit,
+    navigator: AppNavigator,
+    commonActions: CommonScreenActions,
     viewModel: ChatViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -71,26 +68,42 @@ fun MessagesScreen(
     WeFixItAppScaffold(
         title = "Messages",
         currentRoute = "messages",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
+        navController = navigator.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = { navController.popBackStack() }
+        onBackClick = commonActions.onBackClick
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            items(chats) { chat ->
-                ChatItem(chat = chat) {
-                    navController.navigate("chat/${chat.id}")
+        if (chats.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("No messages yet")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                items(chats) { chat ->
+                    ChatItem(chat = chat) {
+                        if (chat.id.isNotBlank()) {
+                            navigator.navigateToChat(chat.id)
+                        } else {
+                            println("Error: Chat has empty ID")
+                        }
+                    }
                 }
             }
         }

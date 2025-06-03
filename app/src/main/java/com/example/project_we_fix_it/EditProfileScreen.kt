@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.UserProfileViewModel
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ import android.R as AndroidR
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
+    commonActions: CommonScreenActions,
     navController: NavController,
     onNavigateToProfile: () -> Unit,
     onBack: () -> Unit,

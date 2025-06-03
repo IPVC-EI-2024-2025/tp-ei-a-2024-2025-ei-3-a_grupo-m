@@ -38,6 +38,7 @@ fun WeFixItAppScaffold(
     onNavigateToNotifications: () -> Unit,
     onNavigateToAssignments: () -> Unit,
     onNavigateToBreakdownReporting: () -> Unit,
+    onNavigateToMessages: () -> Unit,
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
@@ -112,6 +113,10 @@ fun WeFixItAppScaffold(
                     onSettingsClick = {
                         scope.launch { drawerState.close() }
                         onOpenSettings()
+                    },
+                    onMessagesClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToMessages()
                     },
                     onLogoutClick = {
                         scope.launch { drawerState.close() }

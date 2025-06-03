@@ -1,51 +1,49 @@
 package com.example.project_we_fix_it
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.CommonScreenActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BreakdownReportingScreen(
-    navController: NavHostController,
-    onBack: () -> Unit,
+    commonActions: CommonScreenActions,
     onSave: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onLogout: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    // State variables for form fields
+    var equipmentId by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var urgency by remember { mutableStateOf("Normal") }
+    var selectedDate by remember { mutableStateOf("Select Date") }
+    var termsAccepted by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
     WeFixItAppScaffold(
         title = "Report Breakdown",
         currentRoute = "breakdown_reporting",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = onBack
+        onBackClick = commonActions.onBackClick
     ) { padding ->
         Column(
             modifier = Modifier
@@ -60,22 +58,22 @@ fun BreakdownReportingScreen(
             )
 
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = equipmentId,
+                onValueChange = { equipmentId = it },
                 label = { Text("Equipment Identification") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = location,
+                onValueChange = { location = it },
                 label = { Text("Location") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
+                value = description,
+                onValueChange = { description = it },
                 label = { Text("Description") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -95,7 +93,6 @@ fun BreakdownReportingScreen(
                 }
 
                 var expanded by remember { mutableStateOf(false) }
-                var urgency by remember { mutableStateOf("Normal") }
 
                 Box(
                     modifier = Modifier.weight(1f),
@@ -144,9 +141,6 @@ fun BreakdownReportingScreen(
                 }
             }
 
-            var showDatePicker by remember { mutableStateOf(false) }
-            var selectedDate by remember { mutableStateOf("Select Date") }
-
             OutlinedButton(
                 onClick = { showDatePicker = true },
                 modifier = Modifier.fillMaxWidth()
@@ -163,8 +157,8 @@ fun BreakdownReportingScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
-                    checked = false,
-                    onCheckedChange = { /* TODO */ }
+                    checked = termsAccepted,
+                    onCheckedChange = { termsAccepted = it }
                 )
                 Text("I accept the terms")
                 TextButton(onClick = { /* TODO: Show T&Cs */ }) {
@@ -179,7 +173,8 @@ fun BreakdownReportingScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = true // TODO: Add validation
+                enabled = termsAccepted && equipmentId.isNotBlank()
+                        && location.isNotBlank() && description.isNotBlank()
             ) {
                 Text("Save Breakdown")
             }

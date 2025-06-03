@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,95 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.project_we_fix_it.composables.*
-import kotlinx.coroutines.launch
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MyAssignmentsScreen(
-    navController: NavController,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onBreakdownClick: (String) -> Unit,
-    onLogout: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onNavigateToAssignments: () -> Unit
-) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
-
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    val tabs = listOf("Working On", "Assigned Breakdowns")
-
-    // Sample data (would normally come from ViewModel)
-    val workingOnBreakdowns = remember { generateSampleBreakdowns(5, "Working") }
-    val assignedBreakdowns = remember { generateSampleBreakdowns(7, "Assigned") }
-
-
-
-    WeFixItAppScaffold(
-        title = "Assignments",
-        currentRoute = "assignments",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
-        authViewModel = hiltViewModel()
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-                // Tabs
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = Color.White
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = { Text(title) },
-                            modifier = Modifier.padding(vertical = 12.dp),
-                        )
-                    }
-                }
-
-                // Content based on selected tab
-                when (selectedTabIndex) {
-                    0 -> WorkingOnBreakdowns(workingOnBreakdowns, onBreakdownClick)
-                    1 -> AssignedBreakdowns(assignedBreakdowns, onBreakdownClick)
-                }
-            }
-        }
-    }
-
-
-// Helper function for sample data
-private fun generateSampleBreakdowns(count: Int, prefix: String): List<BreakdownItem> {
-    return List(count) { index ->
-        BreakdownItem(
-            id = "${index + 1}",
-            title = "$prefix Breakdown ${index + 1}",
-            description = "Supporting line text lorem ipsum dolor sit amet, consectetur.",
-            priority = when (index % 3) {
-                0 -> 1
-                1 -> 2
-                else -> 3
-            }
-        )
-    }
-}
+import com.example.project_we_fix_it.nav.AppNavigator
+import com.example.project_we_fix_it.nav.CommonScreenActions
 
 @Composable
 fun WorkingOnBreakdowns(
@@ -113,7 +29,10 @@ fun WorkingOnBreakdowns(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(breakdowns) { breakdown ->
-            WorkingOnBreakdownItem(breakdown = breakdown, onBreakdownClick = onBreakdownClick)
+            WorkingOnBreakdownItem(
+                breakdown = breakdown,
+                onBreakdownClick = onBreakdownClick
+            )
         }
     }
 }
@@ -149,7 +68,10 @@ fun AssignedBreakdowns(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(breakdowns) { breakdown ->
-            AssignedBreakdownItem(breakdown = breakdown, onBreakdownClick = onBreakdownClick)
+            AssignedBreakdownItem(
+                breakdown = breakdown,
+                onBreakdownClick = onBreakdownClick
+            )
         }
     }
 }
@@ -190,3 +112,94 @@ fun PriorityIndicator(priority: Int) {
             .background(priorityColor)
     )
 }
+
+fun generateSampleBreakdowns(count: Int, prefix: String): List<BreakdownItem> {
+    return List(count) { index ->
+        BreakdownItem(
+            id = "${index + 1}",
+            title = "$prefix Breakdown ${index + 1}",
+            description = "Supporting line text lorem ipsum dolor sit amet, consectetur.",
+            priority = when (index % 3) {
+                0 -> 1
+                1 -> 2
+                else -> 3
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyAssignmentsScreen(
+    commonActions: CommonScreenActions,
+    onBreakdownClick: (String) -> Unit,
+    viewModel: DashboardViewModel = viewModel()
+) {
+
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Working On", "Assigned Breakdowns")
+
+    // Sample data (would normally come from ViewModel)
+    val workingOnBreakdowns = remember { generateSampleBreakdowns(5, "Working") }
+    val assignedBreakdowns = remember { generateSampleBreakdowns(7, "Assigned") }
+
+
+
+    WeFixItAppScaffold(
+        title = "Assignments",
+        currentRoute = "assignments",
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onLogout = commonActions.logout,
+        authViewModel = hiltViewModel(),
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+                // Tabs
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = Color.White
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = { Text(title) },
+                            modifier = Modifier.padding(vertical = 12.dp),
+                        )
+                    }
+                }
+
+            when (selectedTabIndex) {
+                0 -> WorkingOnBreakdowns(
+                    workingOnBreakdowns,
+                    onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
+                )
+                1 -> AssignedBreakdowns(
+                    assignedBreakdowns,
+                    onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
+                )
+            }
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
