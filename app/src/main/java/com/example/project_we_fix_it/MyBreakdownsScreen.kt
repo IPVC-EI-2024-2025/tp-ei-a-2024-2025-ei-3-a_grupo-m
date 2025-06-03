@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,25 +17,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.ui.theme.WeFixItGrey
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.CommonScreenActions
 import android.R as AndroidR
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBreakdownsScreen(
-    navController: NavController,
-    onBack: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onLogout: () -> Unit,
     onBreakdownClick: (String) -> Unit,
+    commonActions: CommonScreenActions,
     viewModel: MyBreakdownsViewModel = viewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
@@ -52,17 +40,23 @@ fun MyBreakdownsScreen(
     WeFixItAppScaffold(
         title = "My Breakdowns",
         currentRoute = "my_breakdowns",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = onBack,
+        onBackClick = commonActions.onBackClick,
         actions = {
             IconButton(onClick = { /* Handle filter action */ }) {
                 Icon(

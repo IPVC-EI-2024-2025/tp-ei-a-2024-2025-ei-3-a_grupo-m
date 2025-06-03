@@ -1,49 +1,43 @@
 package com.example.project_we_fix_it
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.CommonScreenActions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BreakdownDetailsScreen(
-    navController: NavHostController,
-    onBack: () -> Unit,
+    breakdownId: String,
+    commonActions: CommonScreenActions,
     onSave: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onLogout: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     WeFixItAppScaffold(
         title = "Breakdown Details",
         currentRoute = "breakdown_details",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
-        authViewModel = hiltViewModel()
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        onLogout = commonActions.logout,
     ) { padding ->
         Column(
             modifier = Modifier

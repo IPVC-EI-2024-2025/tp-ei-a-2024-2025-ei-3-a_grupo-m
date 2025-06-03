@@ -15,40 +15,42 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProfileInfoItem(
-    iconResId: Int,
+    icon: ImageVector,  // Changed to ImageVector
     title: String,
-    value: String
+    value: String,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            painter = painterResource(id = iconResId),
+            imageVector = icon,  // Now using imageVector
             contentDescription = title,
-            tint = Color.Gray,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)
         )
-
         Spacer(modifier = Modifier.width(16.dp))
-
         Column {
             Text(
                 text = title,
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
-
             Text(
                 text = value,
                 fontSize = 16.sp,
-                color = Color.Black
+                fontWeight = FontWeight.Medium
             )
         }
     }

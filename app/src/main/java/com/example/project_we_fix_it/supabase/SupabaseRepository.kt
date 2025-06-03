@@ -2,8 +2,7 @@ package com.example.project_we_fix_it.supabase
 
 import android.content.ContentValues.TAG
 import android.util.Log
-import com.example.project_we_fix_it.supabase.SupabaseClient
-import com.example.project_we_fix_it.supabase.*
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
@@ -34,26 +33,71 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+    suspend fun getAllUsers(): List<UserProfile> = withContext(Dispatchers.IO) {
+        client.from("user_profiles").select().decodeList()
+    }
+
+    suspend fun deleteUser(userId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("user_profiles").delete {
+                filter { eq("user_id", userId) }
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun updateUserEmail(userId: String, newEmail: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // Get the current user session first
+            val session = client.auth.currentSessionOrNull()
+                ?: throw Exception("No active session")
+
+            // Update the email - this will trigger a confirmation email
+            val result = client.auth.updateUser {
+                email = newEmail
+            }
+
+            Log.d(TAG, "Email update initiated for $userId. Confirmation sent to $newEmail")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Email update failed for $userId: ${e.message}")
+            false
+        }
+    }
 
     suspend fun updateUserProfile(profile: UserProfile): UserProfile = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Updating profile for user: ${profile.user_id}")
-            Log.d(TAG, "New profile data: name=${profile.name}, role=${profile.role}, phone=${profile.phone}")
+            // Update email first if changed
+            profile.email?.let { newEmail ->
+                val currentUser = client.auth.currentUserOrNull()
+                if (currentUser?.email != newEmail) {
+                    val emailUpdated = updateUserEmail(profile.user_id, newEmail)
+                    if (!emailUpdated) {
+                        throw Exception("Email update failed")
+                    }
+                }
+            }
 
+            // Then update profile data
             client.from("user_profiles")
                 .update({
                     set("name", profile.name)
                     set("role", profile.role)
                     set("phone", profile.phone)
                     set("location", profile.location)
+                    set("status", profile.status)
                 }) {
                     filter { eq("user_id", profile.user_id) }
                 }
-                .decodeSingle()
 
+            // Return the updated profile
+            client.from("user_profiles")
+                .select { filter { eq("user_id", profile.user_id) } }
+                .decodeSingle()
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating profile: ${e.stackTraceToString()}")
-            throw Exception("Error updating user profile: ${e.message}")
+            throw Exception("Profile update failed: ${e.message}")
         }
     }
 
@@ -65,6 +109,39 @@ class SupabaseRepository @Inject constructor() {
                 .decodeList()
         } catch (e: Exception) {
             throw Exception("Error fetching equipment: ${e.message}")
+        }
+    }
+
+    suspend fun createEquipment(equipment: Equipment): Equipment = withContext(Dispatchers.IO) {
+        client.from("equipment").insert(equipment).decodeSingle()
+    }
+
+    suspend fun updateEquipment(equipment: Equipment): Equipment = withContext(Dispatchers.IO) {
+        try {
+            client.from("equipment")
+                .update({
+                    set("identifier", equipment.identifier)
+                    set("type", equipment.type)
+                    set("model", equipment.model)
+                    set("location", equipment.location)
+                    set("status", equipment.status)
+                }) {
+                    filter { eq("equipment_id", equipment.equipment_id) }
+                }
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error updating equipment: ${e.message}")
+         }
+    }
+
+    suspend fun deleteEquipment(equipmentId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("equipment").delete {
+                filter { eq("equipment_id", equipmentId) }
+            }
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -83,6 +160,53 @@ class SupabaseRepository @Inject constructor() {
     }
 
     // ========== BREAKDOWNS ==========
+    suspend fun getBreakdownById(breakdownId: String): Breakdown? = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdowns")
+                .select {
+                    filter {
+                        eq("breakdown_id", breakdownId)
+                    }
+                }
+                .decodeSingle<Breakdown>()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching breakdown: ${e.message}")
+            null
+        }
+    }
+    suspend fun updateBreakdown(breakdown: Breakdown): Breakdown = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdowns")
+                .update({
+                    set("reporter_id", breakdown.reporter_id)
+                    set("equipment_id", breakdown.equipment_id)
+                    set("urgency_level", breakdown.urgency_level)
+                    set("location", breakdown.location)
+                    set("description", breakdown.description)
+                    set("status", breakdown.status)
+                    set("reported_at", breakdown.reported_at)
+                    set("estimated_completion", breakdown.estimated_completion)
+                }) {
+                    filter {eq("breakdown_id", breakdown.breakdown_id)  }
+                    }
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error updating breakdown: ${e.message}")
+        }
+    }
+
+    suspend fun deleteBreakdown(breakdownId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdowns").delete {
+                filter { eq("breakdown_id", breakdownId) }
+            }
+            true
+            } catch (e: Exception) {
+                false
+        }
+    }
+
+
     suspend fun getAllBreakdowns(): List<Breakdown> = withContext(Dispatchers.IO) {
         try {
             client.from("breakdowns")
@@ -173,6 +297,32 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+    suspend fun updateAssignmentStatus(assignmentId: String, status: String): Assignment = withContext(Dispatchers.IO) {
+        try {
+            client.from("assignments")
+                .update({
+                    set("status", status)
+                }) {
+                    filter {
+                        eq("assignment_id", assignmentId)
+                    }
+                }
+                .decodeSingle()
+                } catch (e: Exception) {
+                    throw Exception("Error updating assignment status: ${e.message}")
+
+                }
+    }
+    suspend fun deleteAssignment(assignmentId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("assignments").delete {
+                filter { eq("assignment_id", assignmentId) }
+            }
+            true
+            } catch (e: Exception) {
+                false
+            }
+    }
     // ========== BREAKDOWN PHOTOS ==========
     suspend fun getBreakdownPhotos(breakdownId: String): List<BreakdownPhoto> = withContext(Dispatchers.IO) {
         try {
@@ -197,7 +347,30 @@ class SupabaseRepository @Inject constructor() {
             throw Exception("Error adding breakdown photo: ${e.message}")
         }
     }
+    suspend fun deleteBreakdownPhoto(photoId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdown_photos").delete {
+                filter { eq("photo_id", photoId) }
+            }
+            true
+            } catch (e: Exception) {
+                false
+            }
+    }
 
+    suspend fun updateBreakdownPhoto(photo: BreakdownPhoto): BreakdownPhoto = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdown_photos")
+                .update({
+                    set("photo_url", photo.photo_url)
+                }) {
+                    filter { photo.photo_id?.let { eq("photo_id", it) } }
+                    }
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error updating breakdown photo: ${e.message}")
+        }
+    }
     // ========== MESSAGES ==========
     suspend fun getMessagesByBreakdown(breakdownId: String): List<Message> = withContext(Dispatchers.IO) {
         try {
@@ -238,4 +411,5 @@ class SupabaseRepository @Inject constructor() {
             throw Exception("Error fetching technician metrics: ${e.message}")
         }
     }
+
 }

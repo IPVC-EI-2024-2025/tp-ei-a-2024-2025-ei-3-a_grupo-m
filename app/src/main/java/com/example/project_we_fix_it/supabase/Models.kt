@@ -10,12 +10,13 @@ data class UserProfile(
     val status: String = "active", // 'active', 'inactive'
     val created_at: String? = null,
     val phone: String? = null,
-    val location: String? = null
+    val location: String? = null,
+    val email: String? = null
 )
 
 @Serializable
 data class Equipment(
-    val equipment_id: String? = null,
+    val equipment_id: String,
     val identifier: String,
     val type: String,
     val model: String? = null,
@@ -25,7 +26,7 @@ data class Equipment(
 
 @Serializable
 data class Breakdown(
-    val breakdown_id: String? = null,
+    val breakdown_id: String,
     val reporter_id: String? = null,
     val equipment_id: String? = null,
     val urgency_level: String, // 'low', 'medium', 'high', 'critical'

@@ -1,4 +1,3 @@
-// ChatScreen.kt
 package com.example.project_we_fix_it
 
 import androidx.compose.foundation.background
@@ -17,28 +16,28 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
+import com.example.project_we_fix_it.nav.CommonScreenActions
 import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
-    navController: NavController,
     chatId: String,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToHome: () -> Unit,
-    onNavigateToNotifications: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onNavigateToAssignments: () -> Unit,
-    onNavigateToBreakdownReporting: () -> Unit,
-    onLogout: () -> Unit,
+    commonActions: CommonScreenActions,
     viewModel: ChatViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    if (chatId.isBlank()) {
+        LaunchedEffect(Unit) {
+            commonActions.onBackClick()
+        }
+        return
+    }
 
     LaunchedEffect(chatId) {
         viewModel.loadMessages(chatId)
@@ -55,17 +54,23 @@ fun ChatScreen(
     WeFixItAppScaffold(
         title = "Chat",
         currentRoute = "chat",
-        navController = navController,
-        onNavigateToProfile = onNavigateToProfile,
-        onNavigateToHome = onNavigateToHome,
-        onOpenSettings = onOpenSettings,
-        onNavigateToNotifications = onNavigateToNotifications,
-        onNavigateToAssignments = onNavigateToAssignments,
-        onNavigateToBreakdownReporting = onNavigateToBreakdownReporting,
-        onLogout = onLogout,
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = { navController.popBackStack() }
+        onBackClick = commonActions.onBackClick
     ) { padding ->
         Column(
             modifier = Modifier

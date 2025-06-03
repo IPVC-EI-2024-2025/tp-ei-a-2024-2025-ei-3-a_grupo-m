@@ -37,7 +37,13 @@ fun WeFixItAppScaffold(
     onOpenSettings: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToAssignments: () -> Unit,
+    onNavigateToAdminDashboard: () -> Unit,
+    onNavigateToAdminUsers: () -> Unit,
+    onNavigateToAdminEquipment: () -> Unit,
+    onNavigateToAdminBreakdowns: () -> Unit,
+    onNavigateToAdminAssignments: () -> Unit,
     onNavigateToBreakdownReporting: () -> Unit,
+    onNavigateToMessages: () -> Unit,
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
@@ -51,6 +57,8 @@ fun WeFixItAppScaffold(
 
     // Handle auth state changes
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
+    val userRole = authState.userProfile?.role ?: "technician"
+
     LaunchedEffect(authState.isLoggedIn) {
         if (!authState.isLoggedIn && !authState.isLoading) {
             onLogout()
@@ -88,7 +96,7 @@ fun WeFixItAppScaffold(
         drawerContent = {
             ModalDrawerSheet {
                 WeFixItNavigationDrawer(
-                    userRole = "Technician",
+                    userRole = userRole,
                     onHomeClick = {
                         scope.launch { drawerState.close() }
                         onNavigateToHome()
@@ -112,6 +120,29 @@ fun WeFixItAppScaffold(
                     onSettingsClick = {
                         scope.launch { drawerState.close() }
                         onOpenSettings()
+                    },
+                    onMessagesClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToMessages()
+                    },
+                    onAdminDashboardClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdminDashboard()
+                    },
+                    onAdminUsersClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdminUsers()
+                    },
+                    onAdminEquipmentClick = {
+                        scope.launch { drawerState.close() }
+                    },
+                    onAdminBreakdownsClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdminBreakdowns()
+                    },
+                    onAdminAssignmentsClick = {
+                        scope.launch { drawerState.close() }
+                        onNavigateToAdminAssignments()
                     },
                     onLogoutClick = {
                         scope.launch { drawerState.close() }

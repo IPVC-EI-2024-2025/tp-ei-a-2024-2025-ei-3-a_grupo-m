@@ -10,12 +10,18 @@ import android.R as AndroidR
 @Composable
 fun WeFixItNavigationDrawer(
     userRole: String = "Technician",
+    onAdminDashboardClick: () -> Unit = {},
+    onAdminEquipmentClick: () -> Unit = {},
+    onAdminBreakdownsClick: () -> Unit = {},
+    onAdminUsersClick: () -> Unit = {},
+    onAdminAssignmentsClick: () -> Unit = {},
     onHomeClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMyBreakdownsClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onAssignmentsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onMessagesClick: () -> Unit,
     onLogoutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -36,6 +42,21 @@ fun WeFixItNavigationDrawer(
         DashboardMenuItemRow("Notifications", AndroidR.drawable.ic_popup_reminder, onNotificationsClick)
         DashboardMenuItemRow("My Assignments", AndroidR.drawable.ic_menu_add, onAssignmentsClick)
         DashboardMenuItemRow("Settings", AndroidR.drawable.ic_menu_preferences, onSettingsClick)
+        DashboardMenuItemRow("Messages", AndroidR.drawable.ic_menu_search, onMessagesClick)
+
+        if (userRole == "admin") {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text(
+                text = "Admin",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            DashboardMenuItemRow("Admin Dashboard", AndroidR.drawable.ic_menu_manage, onAdminDashboardClick)
+            DashboardMenuItemRow("Admin Equipment", AndroidR.drawable.ic_menu_manage, onAdminEquipmentClick)
+            DashboardMenuItemRow("Admin Breakdowns", AndroidR.drawable.ic_menu_manage, onAdminBreakdownsClick)
+            DashboardMenuItemRow("Admin Users", AndroidR.drawable.ic_menu_manage, onAdminUsersClick)
+            DashboardMenuItemRow("Admin Assignments", AndroidR.drawable.ic_menu_manage, onAdminAssignmentsClick)
+        }
 
         Spacer(modifier = Modifier.weight(1f))
 
