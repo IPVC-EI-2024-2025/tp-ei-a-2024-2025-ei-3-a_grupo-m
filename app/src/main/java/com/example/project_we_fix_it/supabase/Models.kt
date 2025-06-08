@@ -29,11 +29,11 @@ data class Breakdown(
     val breakdown_id: String,
     val reporter_id: String? = null,
     val equipment_id: String? = null,
-    val urgency_level: String, // 'low', 'medium', 'high', 'critical'
+    val urgency_level: String,
     val location: String? = null,
     val description: String,
-    val status: String = "open", // 'open', 'in_progress', 'completed', 'cancelled'
-    val reported_at: String? = null,
+    val status: String = "open",
+    val reported_at: String,
     val estimated_completion: String? = null
 )
 
