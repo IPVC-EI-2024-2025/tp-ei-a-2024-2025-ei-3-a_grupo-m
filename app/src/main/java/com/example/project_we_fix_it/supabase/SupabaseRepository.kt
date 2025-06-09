@@ -197,7 +197,7 @@ class SupabaseRepository @Inject constructor() {
                     set("reported_at", breakdown.reported_at)
                     set("estimated_completion", breakdown.estimated_completion)
                 }) {
-                    filter {eq("breakdown_id", breakdown.breakdown_id)  }
+                    filter { breakdown.breakdown_id?.let { eq("breakdown_id", it) } }
                     }
                 .decodeSingle()
         } catch (e: Exception) {
@@ -257,8 +257,10 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun createBreakdown(breakdown: Breakdown): Breakdown = withContext(Dispatchers.IO) {
         try {
+            require(breakdown.breakdown_id == null) { "Breakdown ID must be null for creation" }
+
             client.from("breakdowns")
-                .insert(breakdown)
+                .insert(breakdown.copy(breakdown_id = null)) // Explicitly exclude ID
                 .decodeSingle()
         } catch (e: Exception) {
             throw Exception("Error creating breakdown: ${e.message}")
@@ -282,6 +284,16 @@ class SupabaseRepository @Inject constructor() {
     }
 
     // ========== ASSIGNMENTS ==========
+    suspend fun getAllAssignments(): List<Assignment> = withContext(Dispatchers.IO) {
+        try {
+            client.from("assignments")
+                .select()
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching assignments: ${e.message}")
+        }
+    }
+
     suspend fun getAssignmentsByTechnician(technicianId: String): List<Assignment> = withContext(Dispatchers.IO) {
         try {
             client.from("assignments")

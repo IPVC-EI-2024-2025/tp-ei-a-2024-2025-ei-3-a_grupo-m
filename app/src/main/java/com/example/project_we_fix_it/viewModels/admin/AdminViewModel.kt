@@ -31,6 +31,9 @@ class AdminViewModel @Inject constructor(
     private val _breakdowns = MutableStateFlow<List<Breakdown>>(emptyList())
     val breakdowns: StateFlow<List<Breakdown>> = _breakdowns.asStateFlow()
 
+    private val _assignments = MutableStateFlow<List<Assignment>>(emptyList())
+    val assignments: StateFlow<List<Assignment>> = _assignments.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -44,6 +47,7 @@ class AdminViewModel @Inject constructor(
                 _users.value = supabaseRepository.getAllUsers()
                 _equipment.value = supabaseRepository.getAllEquipment()
                 _breakdowns.value = supabaseRepository.getAllBreakdowns()
+                _assignments.value = supabaseRepository.getAllAssignments()
             } catch (e: Exception) {
                 _error.value = "Failed to load data: ${e.message}"
             } finally {
@@ -51,6 +55,7 @@ class AdminViewModel @Inject constructor(
             }
         }
     }
+
     //User
     fun createUser(user: UserProfile) {
         viewModelScope.launch {
@@ -75,7 +80,6 @@ class AdminViewModel @Inject constructor(
                     if (it.user_id == user.user_id) updatedProfile else it
                 }
 
-                // Show success message
                 _error.value = "Profile updated successfully. " +
                         if (user.email != null) "Email change confirmation sent." else ""
 
@@ -144,14 +148,22 @@ class AdminViewModel @Inject constructor(
     }
 
     //Breakdowns
-
     fun createBreakdown(breakdown: Breakdown) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                supabaseRepository.createBreakdown(breakdown)
-                loadAllData()
+                val createdBreakdown = supabaseRepository.createBreakdown(breakdown)
+                _breakdowns.value += createdBreakdown
             } catch (e: Exception) {
-                throw Exception("Error creating breakdown: ${e.message}")
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminBreakdown", "Supabase returned array error, but creating local state anyway")
+                } else {
+                    Log.d("AdminBreakdown", "Breakdown create failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to create breakdown: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminEquipment", "Breakdown creation flow completed")
             }
         }
     }
@@ -162,7 +174,15 @@ class AdminViewModel @Inject constructor(
                 supabaseRepository.updateBreakdown(breakdown)
                 loadAllData()
             } catch (e: Exception) {
-                throw Exception("Error updating breakdown: ${e.message}")
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminBreakdown", "Supabase returned array error, but updating local state anyway")
+                } else {
+                    Log.d("AdminBreakdown", "Equipment update failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to update Breakdown: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminBreakdown", "Breakdown update flow completed")
             }
         }
     }
@@ -179,25 +199,51 @@ class AdminViewModel @Inject constructor(
     }
 
     //Assignments
-
     fun createAssignment(assignment: Assignment) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                supabaseRepository.createAssignment(assignment)
-                loadAllData()
+                val technicianExists = users.value.any { it.user_id == assignment.technician_id }
+                if (!technicianExists) {
+                    _error.value = "Selected technician does not exist"
+                    return@launch
+                }
+
+                val createdAssignment = supabaseRepository.createAssignment(assignment)
+                _assignments.value += createdAssignment
             } catch (e: Exception) {
-                throw Exception("Error creating assignment: ${e.message}")
+                if (e.message?.contains("foreign key constraint") == true) {
+                    _error.value = "Cannot create assignment: Selected technician is invalid"
+                }
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminAssignment", "Supabase returned array error, but creating local state anyway")
+                } else {
+                    Log.d("AdminAssignment", "Assignment create failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to create assignment: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminAssignment", "Assignment create flow completed")
             }
         }
     }
 
-    fun updateAssignment(assignmentId: String, status: String){
+    fun updateAssignment(assignmentId: String, status: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 supabaseRepository.updateAssignmentStatus(assignmentId, status)
                 loadAllData()
             } catch (e: Exception) {
-                throw Exception("Error updating assignment: ${e.message}")
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminAssignment", "Supabase returned array error, but updating local state anyway")
+                } else {
+                    Log.d("AdminAssignment", "Assignment update failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to update assignment: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminAssignment", "Assignment update flow completed")
             }
         }
     }

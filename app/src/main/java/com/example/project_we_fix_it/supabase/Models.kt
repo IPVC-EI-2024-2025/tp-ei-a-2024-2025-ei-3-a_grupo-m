@@ -26,14 +26,14 @@ data class Equipment(
 
 @Serializable
 data class Breakdown(
-    val breakdown_id: String,
+    val breakdown_id: String? = null,
     val reporter_id: String? = null,
     val equipment_id: String? = null,
     val urgency_level: String,
     val location: String? = null,
     val description: String,
     val status: String = "open",
-    val reported_at: String,
+    val reported_at: String? = null,
     val estimated_completion: String? = null
 )
 
@@ -44,7 +44,7 @@ data class Assignment(
     val technician_id: String? = null,
     val assigned_by: String? = null,
     val assigned_at: String? = null,
-    val status: String = "active", // 'active', 'inactive'
+    val status: String = "active",
     val reassigned: Boolean = false
 )
 
