@@ -95,11 +95,20 @@ class AdminViewModel @Inject constructor(
 
     fun createEquipment(equipment: Equipment) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
-                supabaseRepository.createEquipment(equipment)
-                loadAllData()
+                val createdEquipment = supabaseRepository.createEquipment(equipment)
+                _equipment.value += createdEquipment
             } catch (e: Exception) {
-                throw Exception("Error creating equipment: ${e.message}")
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminEquipment", "Supabase returned array error, but creating local state anyway")
+                } else {
+                    Log.d("AdminEquipment", "Equipment create failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to create equipment: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminEquipment", "Equipment creation flow completed")
             }
         }
     }
@@ -110,7 +119,15 @@ class AdminViewModel @Inject constructor(
                 supabaseRepository.updateEquipment(equipment)
                 loadAllData()
             } catch (e: Exception) {
-                throw Exception("Error updating equipment: ${e.message}")
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("AdminEquipment", "Supabase returned array error, but updating local state anyway")
+                } else {
+                    Log.d("AdminEquipment", "Equipment update failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to update equipment: ${e.message}"
+                }
+            } finally {
+                _isLoading.value = false
+                Log.d("AdminEquipment", "Equipment update flow completed")
             }
         }
     }

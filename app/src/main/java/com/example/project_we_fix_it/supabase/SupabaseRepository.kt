@@ -113,11 +113,21 @@ class SupabaseRepository @Inject constructor() {
     }
 
     suspend fun createEquipment(equipment: Equipment): Equipment = withContext(Dispatchers.IO) {
-        client.from("equipment").insert(equipment).decodeSingle()
+        try {
+            require(equipment.equipment_id == null) { "Equipment ID must be null for creation" }
+
+            client.from("equipment")
+                .insert(equipment.copy(equipment_id = null))
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error creating equipment: ${e.message}")
+        }
     }
 
     suspend fun updateEquipment(equipment: Equipment): Equipment = withContext(Dispatchers.IO) {
         try {
+            require(equipment.equipment_id != null) { "Equipment ID cannot be null for update" }
+
             client.from("equipment")
                 .update({
                     set("identifier", equipment.identifier)
@@ -131,7 +141,7 @@ class SupabaseRepository @Inject constructor() {
                 .decodeSingle()
         } catch (e: Exception) {
             throw Exception("Error updating equipment: ${e.message}")
-         }
+        }
     }
 
     suspend fun deleteEquipment(equipmentId: String): Boolean = withContext(Dispatchers.IO) {

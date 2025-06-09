@@ -1,6 +1,7 @@
 package com.example.project_we_fix_it
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -96,6 +97,7 @@ fun AppNavigation(
                 )
             }
             composable(Routes.ADMIN_EQUIPMENT) {
+                Log.d("MainActivity", "AdminEquipmentScreen composable entered")
                 EquipmentManagementScreen(
                     commonActions = navigator.getCommonActions(showBackButton = true)
                 )

@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it.composables
 
+import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.AlertDialog
@@ -134,7 +135,9 @@ fun WeFixItAppScaffold(
                         onNavigateToAdminUsers()
                     },
                     onAdminEquipmentClick = {
+                        Log.d("AppScaffold", "Admin Equipment navigation triggered")
                         scope.launch { drawerState.close() }
+                        onNavigateToAdminEquipment()
                     },
                     onAdminBreakdownsClick = {
                         scope.launch { drawerState.close() }

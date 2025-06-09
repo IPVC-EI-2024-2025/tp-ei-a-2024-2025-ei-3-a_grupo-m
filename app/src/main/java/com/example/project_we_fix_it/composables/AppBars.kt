@@ -33,14 +33,25 @@ fun WeFixItTopAppBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(
-                    painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
-                    contentDescription = "Menu"
-                )
+            if (showBackButton) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        painter = painterResource(id = AndroidR.drawable.ic_menu_revert),
+                        contentDescription = "Back"
+                    )
+                }
+            } else {
+                IconButton(onClick = onMenuClick) {
+                    Icon(
+                        painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
+                        contentDescription = "Menu"
+                    )
+                }
             }
         },
         actions = {
+            actions()
+
             if (showLogout) {
                 IconButton(onClick = onLogoutClick) {
                     Icon(

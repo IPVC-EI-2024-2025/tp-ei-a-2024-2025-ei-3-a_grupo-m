@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it.composables
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -53,6 +54,7 @@ fun WeFixItNavigationDrawer(
             )
             DashboardMenuItemRow("Admin Dashboard", AndroidR.drawable.ic_menu_manage, onAdminDashboardClick)
             DashboardMenuItemRow("Admin Equipment", AndroidR.drawable.ic_menu_manage, onAdminEquipmentClick)
+            Log.d("WeFixItNavigationDrawer", "Admin Equipment clicked")
             DashboardMenuItemRow("Admin Breakdowns", AndroidR.drawable.ic_menu_manage, onAdminBreakdownsClick)
             DashboardMenuItemRow("Admin Users", AndroidR.drawable.ic_menu_manage, onAdminUsersClick)
             DashboardMenuItemRow("Admin Assignments", AndroidR.drawable.ic_menu_manage, onAdminAssignmentsClick)

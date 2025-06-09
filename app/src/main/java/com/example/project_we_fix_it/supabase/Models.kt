@@ -16,7 +16,7 @@ data class UserProfile(
 
 @Serializable
 data class Equipment(
-    val equipment_id: String,
+    val equipment_id: String? = null,
     val identifier: String,
     val type: String,
     val model: String? = null,
