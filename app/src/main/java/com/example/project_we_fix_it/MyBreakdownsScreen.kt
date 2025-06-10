@@ -17,14 +17,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.ui.theme.WeFixItGrey
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import android.R as AndroidR
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBreakdownsScreen(
     onBreakdownClick: (String) -> Unit,
@@ -50,6 +48,11 @@ fun MyBreakdownsScreen(
         onNavigateToAssignments = commonActions.navigateToAssignments,
         onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
         onNavigateToMessages = commonActions.navigateToMessages,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
         onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,

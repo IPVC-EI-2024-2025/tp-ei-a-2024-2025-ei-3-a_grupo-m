@@ -4,6 +4,14 @@ import androidx.navigation.NavController
 import androidx.navigation.NavOptionsBuilder
 
 object Routes {
+    //admin routes
+    const val ADMIN_DASHBOARD = "admin/dashboard"
+    const val ADMIN_USERS = "admin/users"
+    const val ADMIN_EQUIPMENT = "admin/equipment"
+    const val ADMIN_BREAKDOWNS = "admin/breakdowns"
+    const val ADMIN_ASSIGNMENTS = "admin/assignments"
+
+    //general
     const val LOGIN = "login"
     const val DASHBOARD = "dashboard"
     const val PROFILE = "profile"
@@ -21,6 +29,13 @@ object Routes {
 }
 
 data class CommonScreenActions(
+    //admin
+    val navigateToAdminUsers: () -> Unit,
+    val navigateToAdminEquipment: () -> Unit,
+    val navigateToAdminBreakdowns: () -> Unit,
+    val navigateToAdminDashboard: () -> Unit,
+    val navigateToAdminAssignments: () -> Unit,
+    // general
     val navController: NavController,
     val navigateToProfile: () -> Unit,
     val navigateToHome: () -> Unit,
@@ -44,6 +59,14 @@ class AppNavigator(val navController: NavController) {
 
     fun popBackStack() = navController.popBackStack()
 
+    //admin
+    fun navigateToAdminDashboard() = navigateTo(Routes.ADMIN_DASHBOARD)
+    fun navigateToAdminUsers() = navigateTo(Routes.ADMIN_USERS)
+    fun navigateToAdminEquipment() = navigateTo(Routes.ADMIN_EQUIPMENT)
+    fun navigateToAdminBreakdowns() = navigateTo(Routes.ADMIN_BREAKDOWNS)
+    fun navigateToAdminAssignments() = navigateTo(Routes.ADMIN_ASSIGNMENTS)
+
+    //general
     fun navigateToLogin() = navigateTo(Routes.LOGIN) { popUpTo(0) }
     fun navigateToDashboard() = navigateTo(Routes.DASHBOARD)
     fun navigateToProfile() = navigateTo(Routes.PROFILE)
@@ -68,6 +91,13 @@ class AppNavigator(val navController: NavController) {
     fun navigateToPasswordRecovery() = navigateTo(Routes.PASSWORD_RECOVERY)
 
     fun getCommonActions(showBackButton: Boolean = false) = CommonScreenActions(
+        //admin
+        navigateToAdminUsers = ::navigateToAdminUsers,
+        navigateToAdminEquipment = ::navigateToAdminEquipment,
+        navigateToAdminBreakdowns = ::navigateToAdminBreakdowns,
+        navigateToAdminDashboard = ::navigateToAdminDashboard,
+        navigateToAdminAssignments = ::navigateToAdminAssignments,
+        //general
         navController = navController,
         navigateToProfile = ::navigateToProfile,
         navigateToHome = ::navigateToDashboard,

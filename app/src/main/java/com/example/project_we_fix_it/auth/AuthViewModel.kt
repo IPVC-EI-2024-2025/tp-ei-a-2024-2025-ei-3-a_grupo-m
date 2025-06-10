@@ -32,6 +32,9 @@ class AuthViewModel @Inject constructor(
     private val _authState = MutableStateFlow(AuthState(isLoading = true))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
+    val currentUserId: String?
+        get() = authState.value.user?.id
+
     private val supabaseRepository = SupabaseRepository()
 
     init {
@@ -191,10 +194,36 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun adminUpdateUser(profile: UserProfile) {
+        viewModelScope.launch {
+            _authState.value = _authState.value.copy(isLoading = true, error = null)
+
+            val result = authRepository.adminUpdateUserProfile(profile)
+            result.fold(
+                onSuccess = {
+                    _authState.value = _authState.value.copy(
+                        isLoading = false,
+                        error = "User updated successfully"
+                    )
+                    if (authState.value.user?.id == profile.user_id) {
+                        loadUserProfile()
+                    }
+                },
+                onFailure = { e ->
+                    _authState.value = _authState.value.copy(
+                        isLoading = false,
+                        error = e.message
+                    )
+                }
+            )
+        }
+    }
 
     fun clearError() {
         _authState.value = _authState.value.copy(error = null)
     }
+
+
 
 
 }

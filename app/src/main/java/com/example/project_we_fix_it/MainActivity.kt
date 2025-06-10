@@ -1,22 +1,32 @@
 package com.example.project_we_fix_it
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.project_we_fix_it.auth.AuthState
+import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.Routes
 import com.example.project_we_fix_it.ui.theme.ProjectWeFixItTheme
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.project_we_fix_it.adminViews.AdminDashboardScreen
+import com.example.project_we_fix_it.adminViews.AssignmentManagementScreen
+import com.example.project_we_fix_it.adminViews.BreakdownManagementScreen
+import com.example.project_we_fix_it.adminViews.EquipmentManagementScreen
+import com.example.project_we_fix_it.adminViews.UserManagementScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -36,16 +46,24 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    authViewModel: AuthViewModel = hiltViewModel(),
+) {
     val navController = rememberNavController()
     val navigator = remember { AppNavigator(navController) }
+    val authState by authViewModel.authState.collectAsState()
+    val isAdmin = authState.userProfile?.role == "admin"
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
+        // Common routes available to all users
         composable(Routes.LOGIN) {
             LoginScreen(
                 onNavigateToRegister = navigator::navigateToRegister,
                 onNavigateToPasswordRecovery = navigator::navigateToPasswordRecovery,
-                onLoginSuccess = navigator::navigateToDashboard,
+                onLoginSuccess = {
+                    if (isAdmin) navigator.navigateToAdminDashboard()
+                    else navigator.navigateToDashboard()
+                },
                 navController = navController,
                 authViewModel = hiltViewModel()
             )
@@ -65,6 +83,38 @@ fun AppNavigation() {
                 authViewModel = hiltViewModel()
             )
         }
+
+        // Admin-specific routes
+        if (isAdmin) {
+            composable(Routes.ADMIN_DASHBOARD) {
+                AdminDashboardScreen(
+                    commonActions = navigator.getCommonActions(showBackButton = true)
+                )
+            }
+            composable(Routes.ADMIN_USERS) {
+                UserManagementScreen(
+                    commonActions = navigator.getCommonActions(showBackButton = true)
+                )
+            }
+            composable(Routes.ADMIN_EQUIPMENT) {
+                Log.d("MainActivity", "AdminEquipmentScreen composable entered")
+                EquipmentManagementScreen(
+                    commonActions = navigator.getCommonActions(showBackButton = true)
+                )
+            }
+            composable(Routes.ADMIN_BREAKDOWNS) {
+                BreakdownManagementScreen(
+                    commonActions = navigator.getCommonActions(showBackButton = true)
+                )
+            }
+            composable(Routes.ADMIN_ASSIGNMENTS) {
+                AssignmentManagementScreen(
+                    commonActions = navigator.getCommonActions(showBackButton = true)
+                )
+            }
+        }
+
+        // Common routes for all authenticated users (both admin and technician)
         composable(Routes.DASHBOARD) {
             DashboardScreen(
                 commonActions = navigator.getCommonActions(),

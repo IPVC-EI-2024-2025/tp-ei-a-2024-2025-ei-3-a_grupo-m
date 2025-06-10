@@ -14,9 +14,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.*
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.viewModels.AssignmentViewModel
 
 @Composable
 fun WorkingOnBreakdowns(
@@ -133,17 +135,75 @@ fun generateSampleBreakdowns(count: Int, prefix: String): List<BreakdownItem> {
 fun MyAssignmentsScreen(
     commonActions: CommonScreenActions,
     onBreakdownClick: (String) -> Unit,
-    viewModel: DashboardViewModel = viewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    assignmentViewModel: AssignmentViewModel = hiltViewModel()
 ) {
-
     var selectedTabIndex by remember { mutableStateOf(0) }
     val tabs = listOf("Working On", "Assigned Breakdowns")
 
-    // Sample data (would normally come from ViewModel)
-    val workingOnBreakdowns = remember { generateSampleBreakdowns(5, "Working") }
-    val assignedBreakdowns = remember { generateSampleBreakdowns(7, "Assigned") }
+    // State from ViewModel
+    val authState by authViewModel.authState.collectAsState()
+    val assignments by assignmentViewModel.assignments.collectAsState()
+    val workingOnBreakdowns by assignmentViewModel.workingOnBreakdowns.collectAsState()
+    val assignedBreakdowns by assignmentViewModel.assignedBreakdowns.collectAsState()
+    val isLoading by assignmentViewModel.isLoading.collectAsState()
+    val errorMessage by assignmentViewModel.errorMessage.collectAsState()
 
+    // Get current user ID from auth state
+    val currentUserId = authState.user?.id
 
+    // Convert Breakdown to BreakdownItem for the UI
+    val workingOnBreakdownItems = remember(workingOnBreakdowns) {
+        workingOnBreakdowns.map { breakdown ->
+            BreakdownItem(
+                id = breakdown.breakdown_id ?: "",
+                title = breakdown.description.take(30),
+                description = breakdown.description,
+                priority = when (breakdown.urgency_level) {
+                    "critical" -> 3
+                    "high" -> 2
+                    else -> 1
+                }
+            )
+        }
+    }
+
+    val assignedBreakdownItems = remember(assignedBreakdowns) {
+        assignedBreakdowns.map { breakdown ->
+            BreakdownItem(
+                id = breakdown.breakdown_id ?: "",
+                title = breakdown.description.take(30),
+                description = breakdown.description,
+                priority = when (breakdown.urgency_level) {
+                    "critical" -> 3
+                    "high" -> 2
+                    else -> 1
+                }
+            )
+        }
+    }
+
+    // Load data when screen is first shown or when user changes
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let { userId ->
+            assignmentViewModel.loadAssignments(userId)
+        }
+    }
+
+    // Show loading or error states
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    if (errorMessage.isNotEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
 
     WeFixItAppScaffold(
         title = "Assignments",
@@ -157,7 +217,12 @@ fun MyAssignmentsScreen(
         onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
         onNavigateToMessages = commonActions.navigateToMessages,
         onLogout = commonActions.logout,
-        authViewModel = hiltViewModel(),
+        authViewModel = authViewModel,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
     ) { padding ->
         Column(
             modifier = Modifier
@@ -166,34 +231,34 @@ fun MyAssignmentsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-                // Tabs
-                TabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    containerColor = Color.White
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = { Text(title) },
-                            modifier = Modifier.padding(vertical = 12.dp),
-                        )
-                    }
+            // Tabs
+            TabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = Color.White
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTabIndex == index,
+                        onClick = { selectedTabIndex = index },
+                        text = { Text(title) },
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
                 }
+            }
 
+            // Content based on selected tab
             when (selectedTabIndex) {
                 0 -> WorkingOnBreakdowns(
-                    workingOnBreakdowns,
+                    workingOnBreakdownItems,
                     onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
                 )
                 1 -> AssignedBreakdowns(
-                    assignedBreakdowns,
+                    assignedBreakdownItems,
                     onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
                 )
             }
         }
     }
-
 }
 
 

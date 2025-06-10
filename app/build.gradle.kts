@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.generativeai)
     implementation(libs.androidx.core)
+    implementation(libs.androidx.foundation.layout.android)
     ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.hilt.navigation.compose)

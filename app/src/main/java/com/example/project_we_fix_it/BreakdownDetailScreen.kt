@@ -32,6 +32,11 @@ fun BreakdownDetailsScreen(
         onNavigateToAssignments = commonActions.navigateToAssignments,
         onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
         onNavigateToMessages = commonActions.navigateToMessages,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
         onLogout = commonActions.logout,
     ) { padding ->
         Column(

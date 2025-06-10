@@ -1,14 +1,18 @@
 package com.example.project_we_fix_it.auth
 
+import android.util.Log
 import com.example.project_we_fix_it.supabase.SupabaseClient
 import com.example.project_we_fix_it.supabase.UserProfile
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.user.UserInfo
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.Locale.filter
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,6 +40,7 @@ class AuthRepository @Inject constructor() {
             }
             val user = client.auth.currentUserOrNull()
             if (user != null) {
+                Log.d("AuthRepository", "User logged in successfully: ${client.auth.currentSessionOrNull()?.accessToken}")
                 Result.success(user)
             } else {
                 Result.failure(Exception("Login failed: User is null"))
@@ -170,6 +175,74 @@ class AuthRepository @Inject constructor() {
         }
     }
 
+    suspend fun adminUpdateUserEmail(userId: String, newEmail: String): Result<Unit> = withContext(Dispatchers.IO) {
+        Log.d("AuthRepository", "Admin updating email for userId: $userId to: $newEmail")
+        try {
+            // Call the database function that checks admin privileges
+            val response = client.postgrest.rpc("admin_update_user_email", buildJsonObject {
+                put("target_user_id", userId)
+                put("new_email", newEmail)
+            }).decodeAs<Map<String, Any>>()
+
+            Log.d("AuthRepository", "Function response: $response")
+
+            // Check if the function returned success
+            val success = response["success"] as? Boolean ?: false
+            if (success) {
+                Log.d("AuthRepository", "Email updated successfully")
+                Result.success(Unit)
+            } else {
+                val error = response["error"] as? String ?: "Unknown error"
+                Log.e("AuthRepository", "Email update failed: $error")
+                Result.failure(Exception("Email update failed: $error"))
+            }
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Admin email update failed: ${e.message}")
+            Result.failure(Exception("Admin email update failed: ${e.message}"))
+        }
+    }
+
+
+    suspend fun adminUpdateUserProfile(profile: UserProfile): Result<UserProfile> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("AuthRepository", "Updating user profile for user id: ${profile.user_id}")
+
+            // Update email if changed and if email is provided
+            profile.email?.let { email ->
+                val emailResult = adminUpdateUserEmail(profile.user_id, email)
+                emailResult.fold(
+                    onSuccess = { Log.d("AuthRepository", "Email updated successfully") },
+                    onFailure = {
+                        Log.w("AuthRepository", "Email update failed: ${it.message}")
+                        // Continue with profile update even if email update fails
+                    }
+                )
+            }
+
+            // Update profile data in user_profiles table
+            client.from("user_profiles")
+                .update({
+                    set("name", profile.name)
+                    set("role", profile.role)
+                    set("phone", profile.phone)
+                    set("location", profile.location)
+                    set("status", profile.status)
+                }) {
+                    filter { eq("user_id", profile.user_id) }
+                }
+
+            // Return updated profile
+            val updated = client.from("user_profiles")
+                .select { filter { eq("user_id", profile.user_id) } }
+                .decodeSingle<UserProfile>()
+
+            Log.d("AuthRepository", "Profile updated successfully")
+            Result.success(updated)
+        } catch (e: Exception) {
+            Log.e("AuthRepository", "Profile update failed: ${e.message}")
+            Result.failure(Exception("Profile update failed: ${e.message}"))
+        }
+    }
     // Logout
     suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
