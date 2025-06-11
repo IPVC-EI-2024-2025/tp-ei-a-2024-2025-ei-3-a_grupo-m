@@ -17,21 +17,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.supabase.Message
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.viewModels.ChatViewModel
+import com.example.project_we_fix_it.viewModels.MessagesViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun ChatScreen(
     chatId: String,
     commonActions: CommonScreenActions,
-    viewModel: ChatViewModel = hiltViewModel(),
+    viewModel: MessagesViewModel = hiltViewModel(),
+    chatViewModel: ChatViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
-
+    val isLoading by viewModel.isLoading.collectAsState()
+    var messageText by remember { mutableStateOf("") }
+    val currentChat by remember(chatId) {
+        derivedStateOf {
+            chatViewModel.chats.value.find { it.chat_id == chatId }
+        }
+    }
     if (chatId.isBlank()) {
         LaunchedEffect(Unit) {
             commonActions.onBackClick()
@@ -40,7 +50,10 @@ fun ChatScreen(
     }
 
     LaunchedEffect(chatId) {
-        viewModel.loadMessages(chatId)
+        viewModel.loadMessages(
+            chatId = chatId,
+            breakdownId = currentChat?.breakdown_id
+        )
     }
 
     LaunchedEffect(messages.size) {
@@ -72,39 +85,55 @@ fun ChatScreen(
         showBackButton = true,
         onBackClick = commonActions.onBackClick
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                state = listState,
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(messages) { message ->
-                    MessageBubble(message = message)
-                }
-            }
-
-            Row(
+        if (isLoading) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
             ) {
-                OutlinedTextField(
-                    value = viewModel.messageText,
-                    onValueChange = viewModel::onMessageChange,
+                CircularProgressIndicator()
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                // Message list
+                LazyColumn(
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Enter Message") }
-                )
-                IconButton(
-                    onClick = { viewModel.sendMessage(chatId) },
-                    modifier = Modifier.padding(start = 8.dp)
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    items(messages) { message ->
+                        MessageBubble(message = message)
+                    }
+                }
+
+                // Message input
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = messageText,
+                        onValueChange = { messageText = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Type your message") }
+                    )
+                    IconButton(
+                        onClick = {
+                            if (messageText.isNotBlank()) {
+                                authViewModel.currentUserId?.let { viewModel.sendMessage(it, messageText) }
+                                messageText = ""
+                            }
+                        }
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
+                    }
                 }
             }
         }
@@ -113,11 +142,15 @@ fun ChatScreen(
 
 @Composable
 fun MessageBubble(message: Message) {
+    val authViewModel = hiltViewModel<AuthViewModel>()
+
+    val isMe = message.sender_id == authViewModel.currentUserId
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp),
-        horizontalAlignment = if (message.isMe) Alignment.End else Alignment.Start
+        horizontalAlignment = if (isMe) Alignment.End else Alignment.Start
     ) {
         Box(
             modifier = Modifier
@@ -125,21 +158,21 @@ fun MessageBubble(message: Message) {
                     RoundedCornerShape(
                         topStart = 8.dp,
                         topEnd = 8.dp,
-                        bottomStart = if (message.isMe) 8.dp else 0.dp,
-                        bottomEnd = if (message.isMe) 0.dp else 8.dp
+                        bottomStart = if (isMe) 8.dp else 0.dp,
+                        bottomEnd = if (isMe) 0.dp else 8.dp
                     )
                 )
                 .background(
-                    if (message.isMe) MaterialTheme.colorScheme.primary
+                    if (isMe) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.surfaceVariant
                 )
                 .padding(12.dp)
         ) {
             Column {
-                if (!message.isMe) {
+                if (!isMe) {
                     Text(
-                        text = message.senderName,
-                        color = if (message.isMe) MaterialTheme.colorScheme.onPrimary
+                        text = message.sender_id ?: "Unknown",
+                        color = if (isMe) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp
                     )
@@ -147,7 +180,7 @@ fun MessageBubble(message: Message) {
                 }
                 Text(
                     text = message.content,
-                    color = if (message.isMe) MaterialTheme.colorScheme.onPrimary
+                    color = if (isMe) MaterialTheme.colorScheme.onPrimary
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

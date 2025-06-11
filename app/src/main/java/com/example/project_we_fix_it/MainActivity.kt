@@ -170,7 +170,6 @@ fun AppNavigation(
             BreakdownDetailsScreen(
                 breakdownId = backStackEntry.arguments?.getString("id") ?: "",
                 commonActions = navigator.getCommonActions(showBackButton = true),
-                onSave = { /* Handle save */ }
             )
         }
         composable(Routes.ASSIGNMENTS) {

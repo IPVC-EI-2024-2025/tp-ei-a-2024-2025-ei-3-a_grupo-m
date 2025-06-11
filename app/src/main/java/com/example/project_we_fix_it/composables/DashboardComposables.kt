@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project_we_fix_it.BreakdownItem
 import com.example.project_we_fix_it.WeFixItGrey
+import com.example.project_we_fix_it.supabase.Breakdown
+import com.example.project_we_fix_it.supabase.toBreakdownItem
 
 @Composable
 fun DashboardMenuItemRow(
@@ -59,10 +61,16 @@ fun DashboardMenuItemRow(
 
 @Composable
 fun BreakdownCard(
-    breakdown: BreakdownItem,
+    breakdown: Any, // Accept either type
     onClick: () -> Unit,
     trailingContent: @Composable () -> Unit = {}
 ) {
+    val item = when (breakdown) {
+        is BreakdownItem -> breakdown
+        is Breakdown -> breakdown.toBreakdownItem()
+        else -> throw IllegalArgumentException("Unsupported breakdown type")
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -79,12 +87,12 @@ fun BreakdownCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = breakdown.title,
+                    text = item.title,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = breakdown.description,
+                    text = item.description,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -94,3 +102,4 @@ fun BreakdownCard(
         }
     }
 }
+

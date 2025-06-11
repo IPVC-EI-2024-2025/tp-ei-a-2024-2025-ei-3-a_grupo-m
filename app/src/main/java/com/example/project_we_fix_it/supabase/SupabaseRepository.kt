@@ -11,11 +11,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock.System.now
+import kotlin.time.ExperimentalTime
 
 @Singleton
 class SupabaseRepository @Inject constructor() {
 
     private val client = SupabaseClient.supabase
+
 
     // ========== USER PROFILES ==========
     suspend fun getUserProfile(userId: String): UserProfile? = withContext(Dispatchers.IO) {
@@ -283,6 +286,22 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+    suspend fun updateBreakdownUrgency(breakdownId: String, urgency: String): Breakdown = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdowns")
+                .update({
+                    set("urgency_level", urgency)
+                }) {
+                    filter {
+                        eq("breakdown_id", breakdownId)
+                    }
+                }
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error updating breakdown urgency level: ${e.message}")
+        }
+    }
+
     // ========== ASSIGNMENTS ==========
     suspend fun getAllAssignments(): List<Assignment> = withContext(Dispatchers.IO) {
         try {
@@ -409,15 +428,35 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     suspend fun sendMessage(message: Message): Message = withContext(Dispatchers.IO) {
         try {
-            client.from("messages")
+            Log.d(TAG, "Sending message: $message")
+            // First validate required fields
+            Log.d(TAG, "Validating message fields")
+            message.sender_id?.let { require(it.isNotBlank()) { "Sender ID is required" } }
+            require(message.content.isNotBlank()) { "Message content is required" }
+
+            val result = client.from("messages")
                 .insert(message)
-                .decodeSingle()
+                .decodeSingle<Message>()
+
+            // Update chat's last message timestamp
+            message.chat_id?.let { chatId ->
+                client.from("chats")
+                    .update({
+                        set("last_message_at", now())
+                    }) {
+                        filter { eq("chat_id", chatId) }
+                    }
+            }
+
+            result
         } catch (e: Exception) {
             throw Exception("Error sending message: ${e.message}")
         }
     }
+
 
     // ========== TECHNICIAN METRICS ==========
     suspend fun getTechnicianMetrics(technicianId: String): TechnicianMetrics? = withContext(Dispatchers.IO) {
@@ -434,4 +473,91 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+    // ========== CHATS ==========
+    suspend fun createChat(breakdownId: String?, participants: List<String>): Chat = withContext(Dispatchers.IO) {
+        try {
+            client.from("chats")
+                .insert(Chat(
+                    breakdown_id = breakdownId,
+                    participants = participants
+                ))
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error creating chat: ${e.message}")
+        }
+    }
+
+
+    suspend fun getChatByBreakdownId(breakdownId: String): Chat? = withContext(Dispatchers.IO) {
+        try {
+            client.from("chats")
+                .select {
+                    filter {
+                        eq("breakdown_id", breakdownId)
+                        }
+                }
+                .decodeSingleOrNull()
+        } catch (e: Exception) {
+            throw Exception("Error fetching chat: ${e.message}")
+        }
+    }
+
+    suspend fun getChatsForUser(userId: String): List<Chat> = withContext(Dispatchers.IO) {
+        try {
+            client.from("chats")
+                .select {
+                    filter {
+                        contains("participants", listOf(userId))
+                    }
+                    order("last_message_at", Order.DESCENDING)
+                }
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching chats: ${e.message}")
+        }
+    }
+
+   suspend fun getAllChats(): List<Chat> = withContext(Dispatchers.IO) {
+        try {
+            client.from("chats")
+                .select()
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching chats: ${e.message}")
+        }
+    }
+
+   suspend fun getMessagesByChat(chatId: String): List<Message> = withContext(Dispatchers.IO) {
+        try {
+            client.from("messages")
+            .select {
+                filter {
+                    eq("chat_id", chatId)
+                }
+                order("sent_at", Order.ASCENDING)
+                }
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching messages: ${e.message}")
+        }
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

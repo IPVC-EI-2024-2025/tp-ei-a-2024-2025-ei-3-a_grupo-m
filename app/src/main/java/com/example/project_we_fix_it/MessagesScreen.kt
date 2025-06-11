@@ -18,6 +18,8 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.Chat
+import com.example.project_we_fix_it.viewModels.ChatViewModel
 
 @Composable
 fun ChatItem(chat: Chat, onClick: () -> Unit) {
@@ -35,23 +37,15 @@ fun ChatItem(chat: Chat, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = chat.participantNames.filter { it != "You" }.joinToString(),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
-                Text(
-                    text = chat.lastMessageTime,
-                    color = Color.Gray,
-                    fontSize = 12.sp
-                )
+                chat.last_message_at?.let {
+                    Text(
+                        text = it,
+                        color = Color.Gray,
+                        fontSize = 12.sp
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = chat.lastMessage,
-                maxLines = 1,
-                color = Color.Gray
-            )
         }
     }
 }
@@ -64,6 +58,13 @@ fun MessagesScreen(
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val chats by viewModel.chats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+
+    LaunchedEffect(Unit) {
+        authViewModel.currentUserId?.let { userId ->
+            viewModel.loadChats(userId)
+        }
+    }
 
     WeFixItAppScaffold(
         title = "Messages",
@@ -86,15 +87,10 @@ fun MessagesScreen(
         showBackButton = true,
         onBackClick = commonActions.onBackClick
     ) { padding ->
-        if (chats.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No messages yet")
-            }
+        if (isLoading) {
+            CircularProgressIndicator()
+        } else if (chats.isEmpty()) {
+            Text("No messages yet")
         } else {
             LazyColumn(
                 modifier = Modifier
@@ -103,10 +99,8 @@ fun MessagesScreen(
             ) {
                 items(chats) { chat ->
                     ChatItem(chat = chat) {
-                        if (chat.id.isNotBlank()) {
-                            navigator.navigateToChat(chat.id)
-                        } else {
-                            println("Error: Chat has empty ID")
+                        if (chat.chat_id != null) {
+                            navigator.navigateToChat(chat.chat_id)
                         }
                     }
                 }

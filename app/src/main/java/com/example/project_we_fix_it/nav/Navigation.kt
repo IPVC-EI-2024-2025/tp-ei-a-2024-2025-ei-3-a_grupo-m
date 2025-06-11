@@ -43,15 +43,13 @@ data class CommonScreenActions(
     val navigateToNotifications: () -> Unit,
     val openSettings: () -> Unit,
     val navigateToAssignments: () -> Unit,
+    val navigateToBreakdownDetails: (String) -> Unit,
     val navigateToBreakdownReporting: () -> Unit,
     val navigateToMessages: () -> Unit,
+    val navigateToChat: (String) -> Unit,
     val onBackClick: () -> Unit,
     val showBackButton: Boolean = false,
-) {
-    fun navigateToBreakdownDetails(id: String) {
-        navController.navigate(Routes.BREAKDOWN_DETAILS.replace("{id}", id))
-    }
-}
+)
 
 class AppNavigator(val navController: NavController) {
     fun navigateTo(route: String, builder: NavOptionsBuilder.() -> Unit = {}) =
@@ -106,7 +104,9 @@ class AppNavigator(val navController: NavController) {
         openSettings = ::navigateToSettings,
         navigateToAssignments = ::navigateToAssignments,
         navigateToBreakdownReporting = ::navigateToBreakdownReporting,
+        navigateToBreakdownDetails = ::navigateToBreakdownDetails,
         navigateToMessages = ::navigateToMessages,
+        navigateToChat = ::navigateToChat,
         onBackClick = ::popBackStack,
         showBackButton = showBackButton
     )

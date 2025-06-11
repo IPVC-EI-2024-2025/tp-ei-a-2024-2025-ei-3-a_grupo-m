@@ -21,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.composables.BreakdownCard
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.viewModels.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +32,13 @@ fun DashboardScreen(
     val bottomSheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     val breakdowns by viewModel.breakdowns.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+
+    // Load breakdowns when screen is first displayed
+    LaunchedEffect(Unit) {
+        viewModel.loadBreakdowns()
+    }
 
     WeFixItAppScaffold(
         title = "Home",
@@ -58,6 +66,14 @@ fun DashboardScreen(
                     .padding(padding)
                     .padding(horizontal = 16.dp)
             ) {
+                if (error != null) {
+                    Text(
+                        text = error!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
+
                 Text(
                     text = "Active Breakdowns",
                     fontSize = 18.sp,
@@ -65,7 +81,16 @@ fun DashboardScreen(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                if (breakdowns.isEmpty()) {
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else if (breakdowns.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -75,22 +100,21 @@ fun DashboardScreen(
                         Text("No active breakdowns found")
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    LazyColumn {
                         items(breakdowns) { breakdown ->
                             BreakdownCard(
                                 breakdown = breakdown,
                                 onClick = {
-                                    commonActions.navigateToBreakdownDetails(breakdown.id)
+                                    breakdown.breakdown_id?.let { id ->
+                                        commonActions.navigateToBreakdownDetails(id)
+                                    }
                                 }
                             )
                         }
                     }
                 }
 
-                // Bottom sheet handle
+                // Bottom sheet handle (keep your existing implementation)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

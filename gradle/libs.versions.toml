@@ -28,6 +28,12 @@ generativeai = "0.9.0"
 core = "1.13.0"
 compose-material-icons = "1.6.4"
 foundation-layout-android = "1.7.2"
+compose-bom = "2024.02.01"
+compose-compiler = "1.5.3"
+compose-runtime = "1.5.4"
+compose-ui = "1.5.4"
+compose-foundation = "1.5.4"
+compose-material3 = "1.2.0"
 
 [libraries]
 # Core Android
@@ -89,6 +95,15 @@ ksp-room = { module = "androidx.room:room-compiler", version.ref = "room" }
 generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
 androidx-foundation-layout-android = { group = "androidx.compose.foundation", name = "foundation-layout-android", version.ref = "foundation-layout-android" }
+
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "compose-ui" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version.ref = "compose-ui" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview", version.ref = "compose-ui" }
+compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "compose-foundation" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "compose-material3" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "compose-runtime" }
+compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 
 [plugins]
 android-application = { id = "com.android.application", version = "8.8.0" }

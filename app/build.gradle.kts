@@ -23,6 +23,10 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose = true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
 
     defaultConfig {
@@ -75,6 +79,8 @@ dependencies {
     implementation(libs.generativeai)
     implementation(libs.androidx.core)
     implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.androidx.foundation.layout.android)
     ksp(libs.hilt.compiler)
 
     implementation(libs.androidx.hilt.navigation.compose)
@@ -114,6 +120,18 @@ dependencies {
 
     // Glide
     implementation(libs.glide)
+
+    implementation(platform(libs.compose.bom))
+
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.foundation)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.runtime)
+    implementation(libs.compose.activity)
+
+    // For debugging
+    debugImplementation(libs.compose.ui.tooling)
 
     // Testing
     testImplementation(libs.junit)

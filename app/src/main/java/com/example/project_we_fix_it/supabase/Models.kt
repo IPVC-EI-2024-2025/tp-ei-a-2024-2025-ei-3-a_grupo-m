@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it.supabase
 
+import com.example.project_we_fix_it.BreakdownItem
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -69,12 +70,13 @@ data class BreakdownStatusHistory(
 data class TechnicianMetrics(
     val technician_id: String,
     val total_breakdowns_handled: Int = 0,
-    val average_resolution_time: String? = null // PostgreSQL INTERVAL as string
+    val average_resolution_time: String? = null
 )
 
 @Serializable
 data class Message(
     val message_id: String? = null,
+    val chat_id: String? = null,
     val sender_id: String? = null,
     val receiver_id: String? = null,
     val breakdown_id: String? = null,
@@ -113,3 +115,26 @@ data class AssignmentWithDetails(
     val technician: UserProfile? = null,
     val assigner: UserProfile? = null
 )
+
+@Serializable
+data class Chat(
+    val chat_id: String? = null,
+    val breakdown_id: String? = null,
+    val created_at: String? = null,
+    val last_message_at: String? = null,
+    val participants: List<String>
+)
+
+// Add this to your models file or a new file like BreakdownExtensions.kt
+fun Breakdown.toBreakdownItem(): BreakdownItem {
+    return BreakdownItem(
+        id = breakdown_id ?: "", // Handle null ID case
+        title = equipment_id ?: "Breakdown", // Use equipment ID as title or default
+        description = description,
+        priority = when (urgency_level) {
+            "high" -> 1
+            "medium" -> 2
+            else -> 3 // default to low priority
+        }
+    )
+}
