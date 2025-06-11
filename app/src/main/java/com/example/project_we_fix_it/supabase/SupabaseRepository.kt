@@ -19,7 +19,6 @@ class SupabaseRepository @Inject constructor() {
 
     private val client = SupabaseClient.supabase
 
-
     // ========== USER PROFILES ==========
     suspend fun getUserProfile(userId: String): UserProfile? = withContext(Dispatchers.IO) {
         try {
@@ -432,27 +431,37 @@ class SupabaseRepository @Inject constructor() {
     suspend fun sendMessage(message: Message): Message = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Sending message: $message")
-            // First validate required fields
-            Log.d(TAG, "Validating message fields")
+
+            // Validate required fields
             message.sender_id?.let { require(it.isNotBlank()) { "Sender ID is required" } }
             require(message.content.isNotBlank()) { "Message content is required" }
 
-            val result = client.from("messages")
-                .insert(message)
+            // Insert the message and get the result
+            val insertedMessage = client.from("messages")
+                .insert(message.copy(message_id = null)) // Ensure ID is null for insertion
                 .decodeSingle<Message>()
 
-            // Update chat's last message timestamp
+            Log.d(TAG, "Message inserted successfully: ${insertedMessage.message_id}")
+
+            // Update chat's last message timestamp if chat_id exists
             message.chat_id?.let { chatId ->
-                client.from("chats")
-                    .update({
-                        set("last_message_at", now())
-                    }) {
-                        filter { eq("chat_id", chatId) }
-                    }
+                try {
+                    client.from("chats")
+                        .update({
+                            set("last_message_at", now())
+                        }) {
+                            filter { eq("chat_id", chatId) }
+                        }
+                    Log.d(TAG, "Chat timestamp updated for chat: $chatId")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to update chat timestamp: ${e.message}")
+                    // Don't throw here, the message was sent successfully
+                }
             }
 
-            result
+            insertedMessage
         } catch (e: Exception) {
+            Log.e(TAG, "Error sending message: ${e.message}", e)
             throw Exception("Error sending message: ${e.message}")
         }
     }

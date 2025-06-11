@@ -32,34 +32,35 @@ fun ChatScreen(
     chatViewModel: ChatViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
+    val currentUserId by remember(authViewModel.currentUserId) {
+        derivedStateOf { authViewModel.currentUserId }
+    }
+
+    // Clear view model state when leaving the screen
+    DisposableEffect(chatId) {
+        onDispose {
+            viewModel.currentChatId = null
+            viewModel.currentBreakdownId = null
+        }
+    }
+
     val messages by viewModel.messages.collectAsState()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val isLoading by viewModel.isLoading.collectAsState()
     var messageText by remember { mutableStateOf("") }
-    val currentChat by remember(chatId) {
-        derivedStateOf {
-            chatViewModel.chats.value.find { it.chat_id == chatId }
-        }
-    }
-    if (chatId.isBlank()) {
-        LaunchedEffect(Unit) {
-            commonActions.onBackClick()
-        }
-        return
-    }
 
     LaunchedEffect(chatId) {
         viewModel.loadMessages(
             chatId = chatId,
-            breakdownId = currentChat?.breakdown_id
+            breakdownId = null // Only use chatId for loading messages
         )
     }
 
-    LaunchedEffect(messages.size) {
+    LaunchedEffect(messages) {
         if (messages.isNotEmpty()) {
             coroutineScope.launch {
-                listState.animateScrollToItem(messages.size)
+                listState.animateScrollToItem(messages.size - 1)
             }
         }
     }
@@ -85,55 +86,48 @@ fun ChatScreen(
         showBackButton = true,
         onBackClick = commonActions.onBackClick
     ) { padding ->
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            // Message list
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                state = listState,
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                // Message list
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(messages) { message ->
-                        MessageBubble(message = message)
-                    }
-                }
-
-                // Message input
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = messageText,
-                        onValueChange = { messageText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type your message") }
+                items(messages, key = { it.message_id ?: "" }) { message ->
+                    MessageBubble(
+                        message = message,
+                        isMe = message.sender_id == currentUserId
                     )
-                    IconButton(
-                        onClick = {
-                            if (messageText.isNotBlank()) {
-                                authViewModel.currentUserId?.let { viewModel.sendMessage(it, messageText) }
-                                messageText = ""
-                            }
+                }
+            }
+
+            // Message input
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = messageText,
+                    onValueChange = { messageText = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Type your message") }
+                )
+                IconButton(
+                    onClick = {
+                        if (messageText.isNotBlank() && currentUserId != null) {
+                            viewModel.sendMessage(currentUserId!!, messageText)
+                            messageText = ""
                         }
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                     }
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send")
                 }
             }
         }
@@ -141,11 +135,10 @@ fun ChatScreen(
 }
 
 @Composable
-fun MessageBubble(message: Message) {
-    val authViewModel = hiltViewModel<AuthViewModel>()
-
-    val isMe = message.sender_id == authViewModel.currentUserId
-
+fun MessageBubble(
+    message: Message,
+    isMe: Boolean
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()

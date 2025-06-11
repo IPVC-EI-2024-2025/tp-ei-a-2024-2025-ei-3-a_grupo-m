@@ -26,7 +26,7 @@ class ChatViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _createdChatId = MutableStateFlow<String?>(null)
+    val _createdChatId = MutableStateFlow<String?>(null)
     val createdChatId: StateFlow<String?> = _createdChatId.asStateFlow()
 
     fun loadChats(userId: String) {
@@ -48,22 +48,19 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                loadChats(userId)
-                Log.d("ChatViewModel", "Checking for existing chat")
                 val existingChat = repository.getChatByBreakdownId(breakdownId)
-                Log.d("ChatViewModel", "Existing chat: $existingChat")
                 if (existingChat == null) {
-                    Log.d("ChatViewModel", "Creating new chat")
                     val newChat = repository.createChat(
                         breakdownId = breakdownId,
                         participants = listOf(userId, technicianId)
                     )
+                    _createdChatId.value = newChat.chat_id
                 } else {
                     _createdChatId.value = existingChat.chat_id
                 }
                 loadChats(userId)
             } catch (e: Exception) {
-                // Handle error
+                _error.value = "Failed to create/get chat: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

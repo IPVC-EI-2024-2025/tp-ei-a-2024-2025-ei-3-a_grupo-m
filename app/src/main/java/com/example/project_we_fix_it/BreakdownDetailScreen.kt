@@ -165,6 +165,13 @@ fun BreakdownDetailsScreen(
                             commonActions.navigateToChat(chatId)
                         }
                     }
+                    LaunchedEffect(createdChatId) {
+                        createdChatId?.let { chatId ->
+                            commonActions.navigateToChat(chatId)
+                            // Clear the ID after navigation
+                            chatViewModel._createdChatId.value = null
+                        }
+                    }
                 }
             }
         }
