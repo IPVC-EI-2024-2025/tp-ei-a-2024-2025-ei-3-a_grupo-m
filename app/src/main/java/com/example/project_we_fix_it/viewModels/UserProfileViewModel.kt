@@ -30,6 +30,27 @@ class UserProfileViewModel @Inject constructor(
     private val _updateSuccess = MutableStateFlow(false)
     val updateSuccess: StateFlow<Boolean> = _updateSuccess.asStateFlow()
 
+    fun loadProfile(userId: String){
+        Log.d(TAG, "loadProfile() called with: $userId")
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                Log.d(TAG, "Loading profile...")
+                val profile = supabaseRepository.getUserProfile(userId)
+                Log.d(TAG, "Profile loaded: $profile")
+                _profileState.value = profile
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load profile: ${e.message}")
+                _error.value = "Failed to load profile: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun updateProfile(profile: UserProfile) {
         Log.d(TAG, "updateProfile() called with: ${profile.name}")
         viewModelScope.launch {

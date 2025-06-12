@@ -3,6 +3,7 @@ package com.example.project_we_fix_it.viewModels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.project_we_fix_it.auth.AuthRepository
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Chat
 import com.example.project_we_fix_it.supabase.SupabaseRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repository: SupabaseRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
     private val _chats = MutableStateFlow<List<Chat>>(emptyList())
     val chats: StateFlow<List<Chat>> = _chats.asStateFlow()
@@ -27,22 +29,54 @@ class ChatViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _participantProfiles = MutableStateFlow<Map<String, UserProfile>>(emptyMap())
+    val participantProfiles: StateFlow<Map<String, UserProfile>> = _participantProfiles.asStateFlow()
+
+    val currentUserId = authRepository.getCurrentUser()?.id
+
+
     val _createdChatId = MutableStateFlow<String?>(null)
     val createdChatId: StateFlow<String?> = _createdChatId.asStateFlow()
 
     private val profileManager = ProfileManager(repository)
 
-    fun loadChats(userId: String) {
+    fun loadChats(currentUserId: String?) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // Get current user ID
+                val userId = currentUserId ?: return@launch
+
                 Log.d("ChatViewModel", "Loading chats for user: $userId")
-                _chats.value = repository.getChatsForUser(userId)
-                Log.d("ChatViewModel", "Chats loaded: ${_chats.value}")
+
+                // Fetch chats
+                val chats = repository.getChatsForUser(userId)
+                _chats.value = chats
+
+                Log.d("ChatViewModel", "Chats fetched: $chats")
+
+                // Fetch participant profiles
+                val participantIds = chats.flatMap { it.participants }.toSet()
+                val profiles = mutableMapOf<String, UserProfile>()
+
+                Log.d("ChatViewModel", "Participant IDs: $participantIds")
+
+                participantIds.forEach { id ->
+                    repository.getUserProfile(id)?.let { profile ->
+                        profiles[id] = profile
+                    }
+                }
+
+                _participantProfiles.value = profiles
+
+                Log.d("ChatViewModel", "Participant profiles fetched: $profiles")
+
             } catch (e: Exception) {
-                // Handle error
+                _error.value = "Failed to load chats: ${e.message}"
+                Log.e("ChatViewModel", "Error loading chats: ${e.message}", e)
             } finally {
                 _isLoading.value = false
+                Log.d("ChatViewModel", "Chats loaded")
             }
         }
     }
@@ -50,24 +84,29 @@ class ChatViewModel @Inject constructor(
     fun createOrGetChat(breakdownId: String?, participants: List<String>) {
         viewModelScope.launch {
             _isLoading.value = true
+            Log.d("ChatViewModel", "Creating or getting chat for breakdown ID: $breakdownId")
             try {
                 val existingChat = breakdownId?.let {
                     repository.getChatByBreakdownId(it)
                 }
-
+                Log.d("ChatViewModel", "Existing chat: $existingChat")
                 if (existingChat == null) {
                     val newChat = repository.createChat(
                         breakdownId = breakdownId,
                         participants = participants
                     )
+                    Log.d("ChatViewModel", "New chat created: $newChat")
                     _createdChatId.value = newChat.chat_id
                 } else {
                     _createdChatId.value = existingChat.chat_id
+                    Log.d("ChatViewModel", "Existing chat returned: $existingChat")
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to create/get chat: ${e.message}"
+                Log.e("ChatViewModel", "Error creating/getting chat: ${e.message}", e)
             } finally {
                 _isLoading.value = false
+                Log.d("ChatViewModel", "Chat creation/retrieval completed")
             }
         }
     }

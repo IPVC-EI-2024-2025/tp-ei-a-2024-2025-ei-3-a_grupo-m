@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it.viewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_we_fix_it.supabase.*
@@ -33,22 +34,47 @@ class AssignmentViewModel @Inject constructor(
     fun loadAssignments(technicianId: String) {
         _isLoading.value = true
         _errorMessage.value = ""
+        Log.d("AssignmentViewModel", "Starting to load assignments for technician: $technicianId")
 
         viewModelScope.launch {
             try {
                 // Fetch assignments for the technician
+                Log.d("AssignmentViewModel", "Fetching assignments from repository...")
                 val assignments = supabaseRepository.getAssignmentsByTechnician(technicianId)
+                Log.d("AssignmentViewModel", "Raw assignments received: ${assignments.size} items")
+                assignments.forEach { assignment ->
+                    Log.d("AssignmentViewModel", "Assignment: $assignment")
+                }
+
+                val allAssignments = supabaseRepository.getAllAssignmentsDebug()
+                Log.d("AssignmentViewModel", "All assignments received: ${allAssignments.size} items")
+                allAssignments.forEach { assignment ->
+                    Log.d("AssignmentViewModel", "All Assignment: $assignment")
+                }
 
                 // Convert to AssignmentWithDetails by fetching related breakdowns
                 val assignmentsWithDetails = assignments.map { assignment ->
+                    Log.d("AssignmentViewModel", "Processing assignment ID: ${assignment.assignment_id}")
+
                     val breakdown = assignment.breakdown_id?.let {
-                        supabaseRepository.getBreakdownById(it)
+                        Log.d("AssignmentViewModel", "Fetching breakdown for ID: $it")
+                        supabaseRepository.getBreakdownById(it).also { bd ->
+                            Log.d("AssignmentViewModel", "Breakdown fetched: ${bd?.breakdown_id}")
+                        }
                     }
+
                     val technician = assignment.technician_id?.let {
-                        supabaseRepository.getUserProfile(it)
+                        Log.d("AssignmentViewModel", "Fetching technician profile for ID: $it")
+                        supabaseRepository.getUserProfile(it).also { tech ->
+                            Log.d("AssignmentViewModel", "Technician profile fetched: ${tech?.name}")
+                        }
                     }
+
                     val assigner = assignment.assigned_by?.let {
-                        supabaseRepository.getUserProfile(it)
+                        Log.d("AssignmentViewModel", "Fetching assigner profile for ID: $it")
+                        supabaseRepository.getUserProfile(it).also { assign ->
+                            Log.d("AssignmentViewModel", "Assigner profile fetched: ${assign?.name}")
+                        }
                     }
 
                     AssignmentWithDetails(
@@ -62,14 +88,18 @@ class AssignmentViewModel @Inject constructor(
                         breakdown = breakdown,
                         technician = technician,
                         assigner = assigner
-                    )
+                    ).also {
+                        Log.d("AssignmentViewModel", "Created AssignmentWithDetails: $it")
+                    }
                 }
 
                 _assignments.value = assignmentsWithDetails
+                Log.d("AssignmentViewModel", "Assignments with details set: ${assignmentsWithDetails.size} items")
 
                 val workingOn = assignmentsWithDetails
                     .filter { it.breakdown?.status == "in_progress" }
                     .mapNotNull { it.breakdown }
+                Log.d("AssignmentViewModel", "Working on breakdowns: ${workingOn.size} items")
 
                 val assigned = assignmentsWithDetails
                     .filter {
@@ -78,31 +108,17 @@ class AssignmentViewModel @Inject constructor(
                                 it.breakdown.status != "closed"
                     }
                     .mapNotNull { it.breakdown }
+                Log.d("AssignmentViewModel", "Assigned breakdowns: ${assigned.size} items")
 
                 _workingOnBreakdowns.value = workingOn
                 _assignedBreakdowns.value = assigned
 
             } catch (e: Exception) {
+                Log.e("AssignmentViewModel", "Error loading assignments", e)
                 _errorMessage.value = "Failed to load assignments: ${e.message}"
             } finally {
                 _isLoading.value = false
-            }
-        }
-    }
-
-    fun updateBreakdownStatus(breakdownId: String, status: String, technicianId: String) {
-        _isLoading.value = true
-        _errorMessage.value = ""
-
-        viewModelScope.launch {
-            try {
-                val updatedBreakdown = supabaseRepository.updateBreakdownStatus(breakdownId, status)
-                // Refresh the data after update
-                loadAssignments(technicianId)
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to update breakdown status: ${e.message}"
-            } finally {
-                _isLoading.value = false
+                Log.d("AssignmentViewModel", "Finished loading assignments")
             }
         }
     }

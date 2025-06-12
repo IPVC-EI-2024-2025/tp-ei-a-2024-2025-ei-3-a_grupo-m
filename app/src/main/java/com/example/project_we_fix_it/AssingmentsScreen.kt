@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -154,6 +155,7 @@ fun MyAssignmentsScreen(
 
     // Convert Breakdown to BreakdownItem for the UI
     val workingOnBreakdownItems = remember(workingOnBreakdowns) {
+        Log.d("AssignmentsScreen", "Converting workingOnBreakdowns to items: ${workingOnBreakdowns.size}")
         workingOnBreakdowns.map { breakdown ->
             BreakdownItem(
                 id = breakdown.breakdown_id ?: "",
@@ -164,11 +166,14 @@ fun MyAssignmentsScreen(
                     "high" -> 2
                     else -> 1
                 }
-            )
+            ).also {
+                Log.d("AssignmentsScreen", "Created BreakdownItem: $it")
+            }
         }
     }
 
     val assignedBreakdownItems = remember(assignedBreakdowns) {
+        Log.d("AssignmentsScreen", "Converting assignedBreakdowns to items: ${assignedBreakdowns.size}")
         assignedBreakdowns.map { breakdown ->
             BreakdownItem(
                 id = breakdown.breakdown_id ?: "",
@@ -179,9 +184,12 @@ fun MyAssignmentsScreen(
                     "high" -> 2
                     else -> 1
                 }
-            )
+            ).also {
+                Log.d("AssignmentsScreen", "Created BreakdownItem: $it")
+            }
         }
     }
+
 
     // Load data when screen is first shown or when user changes
     LaunchedEffect(currentUserId) {

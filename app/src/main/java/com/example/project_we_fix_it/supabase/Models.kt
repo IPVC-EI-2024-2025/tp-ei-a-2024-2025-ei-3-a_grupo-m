@@ -122,6 +122,7 @@ data class Chat(
     val breakdown_id: String? = null,
     val created_at: String? = null,
     val last_message_at: String? = null,
+    val lastMessagePreview: String? = null,
     val participants: List<String>
 )
 

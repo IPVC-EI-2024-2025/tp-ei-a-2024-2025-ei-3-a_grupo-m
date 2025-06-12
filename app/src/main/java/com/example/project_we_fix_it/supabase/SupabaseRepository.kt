@@ -22,7 +22,7 @@ class SupabaseRepository @Inject constructor() {
     // ========== USER PROFILES ==========
     suspend fun getUserProfile(userId: String): UserProfile? = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Fetching profile for user: $userId")
+            Log.d("SupabaseRepository", "Fetching profile for user: $userId")
             client.from("user_profiles")
                 .select {
                     filter { eq("user_id", userId)
@@ -30,7 +30,7 @@ class SupabaseRepository @Inject constructor() {
                 }
                 .decodeSingleOrNull()
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching profile for $userId: ${e.message}")
+            Log.e("SupabaseRepository", "Error fetching profile for $userId: ${e.message}")
             null
         }
     }
@@ -61,10 +61,10 @@ class SupabaseRepository @Inject constructor() {
                 email = newEmail
             }
 
-            Log.d(TAG, "Email update initiated for $userId. Confirmation sent to $newEmail")
+            Log.d("SupabaseRepository", "Email update initiated for $userId. Confirmation sent to $newEmail")
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Email update failed for $userId: ${e.message}")
+            Log.e("SupabaseRepository", "Email update failed for $userId: ${e.message}")
             false
         }
     }
@@ -181,7 +181,7 @@ class SupabaseRepository @Inject constructor() {
                 }
                 .decodeSingle<Breakdown>()
         } catch (e: Exception) {
-            Log.e(TAG, "Error fetching breakdown: ${e.message}")
+            Log.e("SupabaseRepository", "Error fetching breakdown: ${e.message}")
             null
         }
     }
@@ -328,16 +328,63 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun getAssignmentsByTechnician(technicianId: String): List<Assignment> = withContext(Dispatchers.IO) {
         try {
-            client.from("assignments")
+            Log.d("SupabaseRepository", "Querying assignments for technician: $technicianId")
+
+            // First try without status filter
+            val resultWithoutFilter = client.from("assignments")
+                .select {
+                    filter {
+                        eq("technician_id", technicianId)
+                    }
+                }
+                .decodeList<Assignment>()
+            Log.d("SupabaseRepository", "Assignments without status filter: ${resultWithoutFilter.size} items")
+            resultWithoutFilter.forEach { Log.d("SupabaseRepository", "Assignment: $it") }
+
+            // Then try with status filter
+            val resultWithFilter = client.from("assignments")
                 .select {
                     filter {
                         eq("technician_id", technicianId)
                         eq("status", "active")
                     }
                 }
-                .decodeList()
+                .decodeList<Assignment>()
+            Log.d("SupabaseRepository", "Assignments with status filter: ${resultWithFilter.size} items")
+
+            // Also try a raw query to see if we get different results
+            try {
+                val rawQueryResult = client.from("assignments")
+                    .select(columns = Columns.list("*")) {
+                        filter {
+                            eq("technician_id", technicianId)
+                        }
+                    }
+                    .decodeList<Assignment>()
+                Log.d("SupabaseRepository", "Raw query result: ${rawQueryResult.size} items")
+            } catch (e: Exception) {
+                Log.e("SupabaseRepository", "Raw query error", e)
+            }
+
+            return@withContext resultWithFilter
         } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error fetching assignments for technician $technicianId", e)
             throw Exception("Error fetching assignments: ${e.message}")
+        }
+    }
+
+    suspend fun getAllAssignmentsDebug(): List<Assignment> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("SupabaseRepository", "Fetching ALL assignments for debugging")
+            val allAssignments = client.from("assignments")
+                .select()
+                .decodeList<Assignment>()
+            Log.d("SupabaseRepository", "Total assignments in DB: ${allAssignments.size}")
+            allAssignments.forEach { Log.d("SupabaseRepository", "Assignment: $it") }
+            return@withContext allAssignments
+        } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error fetching all assignments", e)
+            throw Exception("Error fetching all assignments: ${e.message}")
         }
     }
 
@@ -444,7 +491,7 @@ class SupabaseRepository @Inject constructor() {
     @OptIn(ExperimentalTime::class)
     suspend fun sendMessage(message: Message): Message = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Sending message: $message")
+            Log.d("SupabaseRepository", "Sending message: $message")
 
             // Validate required fields
             message.sender_id?.let { require(it.isNotBlank()) { "Sender ID is required" } }
@@ -455,7 +502,7 @@ class SupabaseRepository @Inject constructor() {
                 .insert(message.copy(message_id = null)) // Ensure ID is null for insertion
                 .decodeSingle<Message>()
 
-            Log.d(TAG, "Message inserted successfully: ${insertedMessage.message_id}")
+            Log.d("SupabaseRepository", "Message inserted successfully: ${insertedMessage.message_id}")
 
             // Update chat's last message timestamp if chat_id exists
             message.chat_id?.let { chatId ->
@@ -466,16 +513,16 @@ class SupabaseRepository @Inject constructor() {
                         }) {
                             filter { eq("chat_id", chatId) }
                         }
-                    Log.d(TAG, "Chat timestamp updated for chat: $chatId")
+                    Log.d("SupabaseRepository", "Chat timestamp updated for chat: $chatId")
                 } catch (e: Exception) {
-                    Log.w(TAG, "Failed to update chat timestamp: ${e.message}")
+                    Log.w("SupabaseRepository", "Failed to update chat timestamp: ${e.message}")
                     // Don't throw here, the message was sent successfully
                 }
             }
 
             insertedMessage
         } catch (e: Exception) {
-            Log.e(TAG, "Error sending message: ${e.message}", e)
+            Log.e("SupabaseRepository", "Error sending message: ${e.message}", e)
             throw Exception("Error sending message: ${e.message}")
         }
     }
@@ -499,6 +546,7 @@ class SupabaseRepository @Inject constructor() {
     // ========== CHATS ==========
     suspend fun createChat(breakdownId: String?, participants: List<String>): Chat = withContext(Dispatchers.IO) {
         try {
+            Log.d("SupabaseRepository", "Creating chat for breakdown ID: $breakdownId")
             client.from("chats")
                 .insert(Chat(
                     breakdown_id = breakdownId,
@@ -506,6 +554,7 @@ class SupabaseRepository @Inject constructor() {
                 ))
                 .decodeSingle()
         } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error creating chat: ${e.message}")
             throw Exception("Error creating chat: ${e.message}")
         }
     }
@@ -527,25 +576,32 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun getChatsForUser(userId: String): List<Chat> = withContext(Dispatchers.IO) {
         try {
-            client.from("chats")
+            Log.d("SupabaseRepository", "Fetching chats for user: $userId")
+            val result = client.from("chats")
                 .select {
                     filter {
-                        contains("participants", listOf(userId))
+                        cs("participants", listOf(userId))
                     }
                     order("last_message_at", Order.DESCENDING)
                 }
-                .decodeList()
+                .decodeList<Chat>()
+            Log.d("SupabaseRepository", "Found ${result.size} chats for user $userId")
+            return@withContext result
         } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error fetching chats for $userId", e)
             throw Exception("Error fetching chats: ${e.message}")
         }
     }
 
+
    suspend fun getAllChats(): List<Chat> = withContext(Dispatchers.IO) {
         try {
+            Log.d("SupabaseRepository", "Fetching all chats")
             client.from("chats")
                 .select()
                 .decodeList()
         } catch (e: Exception) {
+            Log.d("SupabaseRepository", "Error fetching all chats: ${e.message}")
             throw Exception("Error fetching chats: ${e.message}")
         }
     }
