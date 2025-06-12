@@ -91,5 +91,7 @@ class BreakdownViewModel @Inject constructor(
             }
         }
     }
-
+    suspend fun getTechnicianName(technicianId: String): String? {
+        return supabaseRepository.getUserProfile(technicianId)?.name
+    }
 }

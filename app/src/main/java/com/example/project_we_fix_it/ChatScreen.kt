@@ -20,6 +20,7 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Message
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.ChatViewModel
 import com.example.project_we_fix_it.viewModels.MessagesViewModel
 import kotlinx.coroutines.launch
@@ -91,7 +92,6 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Message list
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 state = listState,
@@ -99,14 +99,20 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages, key = { it.message_id ?: "" }) { message ->
+                    var senderProfile by remember { mutableStateOf<UserProfile?>(null) }
+
+                    LaunchedEffect(message.sender_id) {
+                        senderProfile = chatViewModel.getUserProfile(message.sender_id)
+                    }
+
                     MessageBubble(
                         message = message,
-                        isMe = message.sender_id == currentUserId
+                        isMe = message.sender_id == currentUserId,
+                        senderName = senderProfile?.name
                     )
                 }
             }
 
-            // Message input
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,7 +143,8 @@ fun ChatScreen(
 @Composable
 fun MessageBubble(
     message: Message,
-    isMe: Boolean
+    isMe: Boolean,
+    senderName: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -162,9 +169,9 @@ fun MessageBubble(
                 .padding(12.dp)
         ) {
             Column {
-                if (!isMe) {
+                if (!isMe && senderName != null) {
                     Text(
-                        text = message.sender_id ?: "Unknown",
+                        text = senderName,
                         color = if (isMe) MaterialTheme.colorScheme.onPrimary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp

@@ -102,7 +102,6 @@ class SupabaseRepository @Inject constructor() {
             throw Exception("Profile update failed: ${e.message}")
         }
     }
-
     // ========== EQUIPMENT ==========
     suspend fun getAllEquipment(): List<Equipment> = withContext(Dispatchers.IO) {
         try {
@@ -298,6 +297,21 @@ class SupabaseRepository @Inject constructor() {
                 .decodeSingle()
         } catch (e: Exception) {
             throw Exception("Error updating breakdown urgency level: ${e.message}")
+        }
+    }
+
+    suspend fun getBreakdownsByReporter(reporterId: String): List<Breakdown> = withContext(Dispatchers.IO) {
+        try {
+            client.from("breakdowns")
+                .select {
+                    filter {
+                        eq("reporter_id", reporterId)
+                    }
+                    order("reported_at", Order.DESCENDING)
+                }
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching breakdowns by reporter: ${e.message}")
         }
     }
 

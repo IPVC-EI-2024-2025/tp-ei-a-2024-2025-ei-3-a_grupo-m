@@ -103,7 +103,16 @@ fun DashboardScreen(
                     LazyColumn {
                         items(breakdowns) { breakdown ->
                             BreakdownCard(
-                                breakdown = breakdown,
+                                breakdown = BreakdownItem(
+                                    id = breakdown.breakdown_id ?: "",
+                                    title = breakdown.description.take(30),
+                                    description = breakdown.description,
+                                    priority = when (breakdown.urgency_level) {
+                                        "critical" -> 3
+                                        "high" -> 2
+                                        else -> 1
+                                    }
+                                ),
                                 onClick = {
                                     breakdown.breakdown_id?.let { id ->
                                         commonActions.navigateToBreakdownDetails(id)
@@ -114,7 +123,7 @@ fun DashboardScreen(
                     }
                 }
 
-                // Bottom sheet handle (keep your existing implementation)
+                // Bottom sheet handle
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

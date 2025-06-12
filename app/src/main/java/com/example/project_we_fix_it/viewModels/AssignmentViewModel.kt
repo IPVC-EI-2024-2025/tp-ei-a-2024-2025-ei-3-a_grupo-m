@@ -67,13 +67,16 @@ class AssignmentViewModel @Inject constructor(
 
                 _assignments.value = assignmentsWithDetails
 
-                // Separate breakdowns by status
                 val workingOn = assignmentsWithDetails
                     .filter { it.breakdown?.status == "in_progress" }
                     .mapNotNull { it.breakdown }
 
                 val assigned = assignmentsWithDetails
-                    .filter { it.breakdown?.status == "open" }
+                    .filter {
+                        it.breakdown != null &&
+                                it.technician_id == technicianId &&
+                                it.breakdown.status != "closed"
+                    }
                     .mapNotNull { it.breakdown }
 
                 _workingOnBreakdowns.value = workingOn

@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -88,13 +89,16 @@ fun BreakdownDetailsScreen(
                     style = MaterialTheme.typography.headlineSmall
                 )
 
-                // Get assigned technician name if available
-                val assignedTechnician = breakdown?.assignments?.firstOrNull()?.technician_id?.let { techId ->
-                    // In a real app, you'd fetch the technician's name from user profiles
-                    "Technician ID: $techId" // Placeholder - you should fetch the actual name
-                } ?: "Not assigned"
+                val currentUserId = authViewModel.currentUserId
+                val assignedTechnician by produceState<String?>(initialValue = null, breakdown) {
+                    breakdown?.assignments?.firstOrNull {
+                        it.technician_id == currentUserId || it.technician_id != null
+                    }?.technician_id?.let { techId ->
+                        value = breakdownViewModel.getTechnicianName(techId) ?: "Technician ID: $techId"
+                    }
+                }
 
-                DetailRow("Assigned to", assignedTechnician)
+                DetailRow("Assigned to", assignedTechnician ?: "Not assigned")
                 DetailRow("Equipment Identification", breakdown?.equipment?.identifier ?: "Unknown equipment")
                 DetailRow("Description", breakdown?.description ?: "No description")
                 DetailRow("Date", breakdown?.reported_at ?: "Unknown date")
@@ -143,20 +147,26 @@ fun BreakdownDetailsScreen(
                     }
                     Button(
                         onClick = {
-                            Log.d("BreakdownDetailsScreen", "Chat button clicked")
                             breakdown?.let { bd ->
-                                val technicianId = bd.assignments.firstOrNull()?.technician_id
-                                Log.d("BreakdownDetailsScreen", "Technician ID: $technicianId")
-                                if (technicianId != null && authViewModel.currentUserId != null) {
-                                    chatViewModel.createOrGetChat(
-                                        userId = authViewModel.currentUserId!!,
-                                        breakdownId = bd.breakdown_id,
-                                        technicianId = technicianId
-                                    )
-                                    // Don't navigate here - we'll navigate when createdChatId updates
+                                val currentUserId = authViewModel.currentUserId
+                                if (currentUserId != null) {
+                                    // Determine participants for the chat
+                                    val participants = mutableListOf<String>().apply {
+                                        add(currentUserId) // Always include current user
+                                        bd.reporter_id?.let { add(it) }
+                                        bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
+                                    }.distinct() // Remove duplicates if reporter is also technician
+
+                                    if (participants.size > 1) { // Need at least 2 people to chat
+                                        chatViewModel.createOrGetChat(
+                                            breakdownId = bd.breakdown_id,
+                                            participants = participants
+                                        )
+                                    }
                                 }
                             }
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("Chat About This Breakdown")
                     }

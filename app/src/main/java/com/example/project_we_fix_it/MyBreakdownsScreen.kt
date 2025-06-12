@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,21 +22,35 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.ui.theme.WeFixItGrey
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.toBreakdownItem
+import com.example.project_we_fix_it.viewModels.MyBreakdownsViewModel
 import android.R as AndroidR
 
 @Composable
 fun MyBreakdownsScreen(
     onBreakdownClick: (String) -> Unit,
     commonActions: CommonScreenActions,
-    viewModel: MyBreakdownsViewModel = viewModel(),
+    viewModel: MyBreakdownsViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val breakdowns by viewModel.myBreakdowns.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-
+    val error by viewModel.error.collectAsState()
     LaunchedEffect(key1 = Unit) {
+        Log.d("MyBreakdownsScreen", "Loading breakdowns from:")
         viewModel.loadMyBreakdowns()
     }
+
+    if (error != null) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = error!!, color = MaterialTheme.colorScheme.error)
+        }
+        return
+    }
+
 
     WeFixItAppScaffold(
         title = "My Breakdowns",
@@ -78,6 +93,13 @@ fun MyBreakdownsScreen(
                 ) {
                     CircularProgressIndicator(color = Color(0xFF5C5CFF))
                 }
+            } else if (breakdowns.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No breakdowns reported by you")
+                }
             } else {
                 Column(
                     modifier = Modifier
@@ -85,7 +107,7 @@ fun MyBreakdownsScreen(
                         .padding(horizontal = 16.dp)
                 ) {
                     Text(
-                        text = "List of my breakdowns",
+                        text = "List of my breakdowns (${breakdowns.size})",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(vertical = 16.dp)
@@ -97,10 +119,8 @@ fun MyBreakdownsScreen(
                     ) {
                         items(breakdowns) { breakdown ->
                             MyBreakdownCard(
-                                breakdown = breakdown,
-                                onClick = {
-                                    onBreakdownClick(breakdown.id)
-                                }
+                                breakdown = breakdown.toBreakdownItem(),
+                                onClick = { breakdown.breakdown_id?.let { onBreakdownClick(it) } }
                             )
                         }
                     }
@@ -109,6 +129,7 @@ fun MyBreakdownsScreen(
         }
     }
 }
+
 
 @Composable
 fun MyBreakdownCard(

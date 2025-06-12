@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Chat
 import com.example.project_we_fix_it.supabase.SupabaseRepository
+import com.example.project_we_fix_it.supabase.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,8 @@ class ChatViewModel @Inject constructor(
     val _createdChatId = MutableStateFlow<String?>(null)
     val createdChatId: StateFlow<String?> = _createdChatId.asStateFlow()
 
+    private val profileManager = ProfileManager(repository)
+
     fun loadChats(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -44,26 +47,34 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun createOrGetChat(userId: String, breakdownId: String, technicianId: String) {
+    fun createOrGetChat(breakdownId: String?, participants: List<String>) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val existingChat = repository.getChatByBreakdownId(breakdownId)
+                val existingChat = breakdownId?.let {
+                    repository.getChatByBreakdownId(it)
+                }
+
                 if (existingChat == null) {
                     val newChat = repository.createChat(
                         breakdownId = breakdownId,
-                        participants = listOf(userId, technicianId)
+                        participants = participants
                     )
                     _createdChatId.value = newChat.chat_id
                 } else {
                     _createdChatId.value = existingChat.chat_id
                 }
-                loadChats(userId)
             } catch (e: Exception) {
                 _error.value = "Failed to create/get chat: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+    suspend fun getUserProfile(userId: String?): UserProfile? {
+        if (userId == null) return null
+        return viewModelScope.run {
+            profileManager.getProfile(userId)
         }
     }
 

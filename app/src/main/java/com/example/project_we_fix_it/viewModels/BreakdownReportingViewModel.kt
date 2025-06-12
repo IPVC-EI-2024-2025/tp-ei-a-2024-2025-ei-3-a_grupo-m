@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it.viewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_we_fix_it.auth.AuthRepository
@@ -8,6 +9,7 @@ import com.example.project_we_fix_it.supabase.SupabaseRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,6 +30,9 @@ class BreakdownReportingViewModel @Inject constructor(
     private val _isSuccess = MutableStateFlow(false)
     val isSuccess: StateFlow<Boolean> = _isSuccess
 
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     fun reportBreakdown(
         description: String,
         location: String,
@@ -46,7 +51,6 @@ class BreakdownReportingViewModel @Inject constructor(
 
                 val currentUserId = authRepository.getCurrentUser()?.id
                     ?: throw Exception("User not authenticated")
-
                 val dbUrgencyLevel = when (urgencyLevel.lowercase()) {
                     "low" -> "low"
                     "normal" -> "normal"
@@ -54,9 +58,9 @@ class BreakdownReportingViewModel @Inject constructor(
                     "critical" -> "critical"
                     else -> "normal"
                 }
-
+                Log.d("BreakdownsReporting", "Breakdown reported by: $currentUserId")
                 val breakdown = Breakdown(
-                    breakdown_id = UUID.randomUUID().toString(),
+                    breakdown_id = null,
                     reporter_id = currentUserId,
                     equipment_id = null,
                     urgency_level = dbUrgencyLevel,
@@ -71,12 +75,19 @@ class BreakdownReportingViewModel @Inject constructor(
                 _isSuccess.value = true
                 onSuccess()
             } catch (e: Exception) {
-                _errorMessage.value = "Failed to report breakdown: ${e.message}"
+                if (e.message?.contains("Expected start of the array") == true) {
+                    Log.d("BreakdownReporting", "Supabase returned array error, but creating local state anyway")
+                } else {
+                    Log.d("BreakdownReporting", "Breakdown create failed: ${e.stackTraceToString()}")
+                    _error.value = "Failed to create breakdown: ${e.message}"
+                }
             } finally {
                 _isLoading.value = false
+                Log.d("BreakdownReporting", "Breakdown creation flow completed")
             }
         }
     }
+
     private fun getCurrentDateTimeString(): String {
         return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             .format(Date())
