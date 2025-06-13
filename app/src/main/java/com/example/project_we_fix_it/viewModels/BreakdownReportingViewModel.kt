@@ -33,6 +33,8 @@ class BreakdownReportingViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val notificationService: NotificationService = NotificationService(supabaseRepository, authRepository)
+
     fun reportBreakdown(
         description: String,
         location: String,
@@ -74,6 +76,11 @@ class BreakdownReportingViewModel @Inject constructor(
                 supabaseRepository.createBreakdown(breakdown)
                 _isSuccess.value = true
                 onSuccess()
+                notificationService.notifyBreakdownChange(
+                    breakdown = breakdown,
+                    operation = "created",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
             } catch (e: Exception) {
                 if (e.message?.contains("Expected start of the array") == true) {
                     Log.d("BreakdownReporting", "Supabase returned array error, but creating local state anyway")

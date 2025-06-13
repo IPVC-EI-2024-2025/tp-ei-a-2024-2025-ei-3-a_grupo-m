@@ -1,5 +1,8 @@
 package com.example.project_we_fix_it
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,12 +15,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.Notification
 import com.example.project_we_fix_it.viewModels.NotificationViewModel
+import kotlinx.serialization.json.Json
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
@@ -27,69 +37,174 @@ fun NotificationsScreen(
 ) {
     val authState by authViewModel.authState.collectAsState()
     val notifications by notificationViewModel.notifications.collectAsState()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val userId = authState.user?.id
 
-    LaunchedEffect(userId) {
-        userId?.let { notificationViewModel.loadNotifications(it) }
+    LaunchedEffect(notifications) {
+        Log.d("NotificationsScreen", "Notifications: ${notifications.size}, Unread: $unreadCount")
+        notifications.forEach {
+            Log.d("NotificationsScreen", "Notification: ${it.title} - ${it.message}")
+        }
+    }
+
+    LaunchedEffect(notifications) {
+        Log.d("NotificationsScreen", "Notifications updated. Count: ${notifications.size}")
+        if (notifications.isNotEmpty()) {
+            Log.d("NotificationsScreen", "First notification: ${notifications.first().title}")
+            Log.d("NotificationsScreen", "Unread count: $unreadCount")
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Notifications") },
+                title = {
+                    Text("Notifications ${if (unreadCount > 0) "($unreadCount)" else ""}")
+                },
                 actions = {
-                    IconButton(onClick = {
-                        userId?.let { notificationViewModel.markAsRead(it) }
-                    }) {
-                        Icon(Icons.Default.ClearAll, contentDescription = "Clear all")
+                    if (notifications.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                userId?.let {
+                                    notificationViewModel.markAsRead(it)
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.ClearAll, contentDescription = "Mark all as read")
+                        }
                     }
                 }
             )
         }
     ) { padding ->
-        if (notifications.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No new notifications")
+        when {
+            notifications.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No new notifications")
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(notifications) { notification ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = notification.title,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = notification.message,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            notification.breakdown_title?.let {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Breakdown: $it",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
+            else -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(notifications.sortedByDescending { it.created_at }) { notification ->
+                        NotificationItem(
+                            notification = notification,
+                            onClick = {
+                                handleNotificationClick(notification, commonActions)
+                                if (!notification.read) {
+                                    userId?.let { notificationViewModel.markAsRead(it) }
+                                }
                             }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun NotificationItem(
+    notification: Notification,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (!notification.read) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = notification.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                notification.created_at?.let {
+                    Text(
+                        text = formatSupabaseTimestamp(it),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = notification.message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            // Safely handle metadata display
+            notification.metadata?.let { meta ->
+                val metadata = try {
+                    Json.decodeFromString<Map<String, String>>(meta)
+                } catch (e: Exception) {
+                    null
+                }
+
+                metadata?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Column {
+                        it.forEach { (key, value) ->
+                            Text(
+                                text = "$key: $value",
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun formatSupabaseTimestamp(timestamp: String): String {
+    return try {
+        val instant = Instant.parse(timestamp)
+        val formatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm")
+            .withZone(ZoneId.systemDefault())
+        formatter.format(instant)
+    } catch (e: Exception) {
+        timestamp
+    }
+}
+
+private fun handleNotificationClick(
+    notification: Notification,
+    commonActions: CommonScreenActions
+) {
+    notification.related_id?.let { relatedId ->
+        when {
+            notification.title.contains("Breakdown", ignoreCase = true) -> {
+                commonActions.navigateToBreakdownDetails(relatedId)
             }
         }
     }

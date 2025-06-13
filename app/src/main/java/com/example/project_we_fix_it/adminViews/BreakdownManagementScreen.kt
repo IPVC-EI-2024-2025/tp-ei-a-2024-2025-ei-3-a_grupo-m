@@ -379,11 +379,6 @@ private fun TechnicianAssignmentDialog(
                                 .fillMaxWidth()
                                 .clickable {
                                     onAssign(technician.user_id)
-                                    viewModel.createNotificationForAssignment(
-                                        technicianId = technician.user_id,
-                                        breakdownId = breakdown.breakdown_id ?: "",
-                                        breakdownDescription = breakdown.description
-                                    )
                                 }
                                 .padding(4.dp),
                             elevation = CardDefaults.cardElevation(2.dp)

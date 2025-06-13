@@ -628,10 +628,17 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun createNotification(notification: Notification): Notification = withContext(Dispatchers.IO) {
         try {
-            client.from("notifications")
+            Log.d("SupabaseRepo", "Inserting notification into database")
+            Log.d("SupabaseRepo", "For user: ${notification.user_id}")
+            Log.d("SupabaseRepo", "Title: ${notification.title}")
+
+            val result = client.from("notifications")
                 .insert(notification)
-                .decodeSingle()
+                .decodeSingleOrNull<Notification>()
+
+            return@withContext result!!
         } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error creating notification", e)
             throw Exception("Error creating notification: ${e.message}")
         }
     }
@@ -666,6 +673,41 @@ class SupabaseRepository @Inject constructor() {
             true
         } catch (e: Exception) {
             false
+        }
+    }
+
+    suspend fun getUserIdsByRole(role: String): List<String> = withContext(Dispatchers.IO) {
+        try {
+            client.from("user_profiles")
+                .select(columns = Columns.list("user_id")) {
+                    filter {
+                        eq("role", role)
+                    }
+                }
+                .decodeList<UserProfile>()
+                .map { it.user_id }
+        } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error fetching user IDs by role: ${e.message}")
+            emptyList()
+        }
+    }
+
+    suspend fun getNotificationsForUser(userId: String): List<Notification> = withContext(Dispatchers.IO) {
+        try {
+            Log.d("SupabaseRepo", "Fetching notifications for user: $userId")
+            val result = client.from("notifications")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                    order("created_at", Order.DESCENDING)
+                }.decodeList<Notification>()
+
+            Log.d("SupabaseRepo", "Found ${result.size} notifications for user $userId")
+            return@withContext result
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error fetching notifications", e)
+            emptyList()
         }
     }
 

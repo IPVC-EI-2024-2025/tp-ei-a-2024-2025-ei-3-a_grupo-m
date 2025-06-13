@@ -3,6 +3,7 @@ package com.example.project_we_fix_it.viewModels.admin
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.project_we_fix_it.auth.AuthRepository
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Assignment
 import com.example.project_we_fix_it.supabase.Breakdown
@@ -10,6 +11,7 @@ import com.example.project_we_fix_it.supabase.Equipment
 import com.example.project_we_fix_it.supabase.Notification
 import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
+import com.example.project_we_fix_it.viewModels.NotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +23,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class AdminViewModel @Inject constructor(
     private val supabaseRepository: SupabaseRepository,
+    private val notificationService: NotificationService,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _users = MutableStateFlow<List<UserProfile>>(emptyList())
@@ -63,7 +67,12 @@ class AdminViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 supabaseRepository.updateUserProfile(user)
-                loadAllData() // Refresh the list
+                notificationService.notifyUserProfileChange(
+                    userProfile = user,
+                    operation = "created",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
+                loadAllData()
             } catch (e: Exception) {
                 _error.value = "Failed to create user: ${e.message}"
             } finally {
@@ -71,6 +80,7 @@ class AdminViewModel @Inject constructor(
             }
         }
     }
+
 
     fun updateUser(user: UserProfile) {
         viewModelScope.launch {
@@ -101,16 +111,36 @@ class AdminViewModel @Inject constructor(
     fun createEquipment(equipment: Equipment) {
         viewModelScope.launch {
             _isLoading.value = true
+            Log.d("AdminEquipment", "Starting equipment creation flow")
             try {
-                val createdEquipment = supabaseRepository.createEquipment(equipment)
-                _equipment.value += createdEquipment
-            } catch (e: Exception) {
-                if (e.message?.contains("Expected start of the array") == true) {
-                    Log.d("AdminEquipment", "Supabase returned array error, but creating local state anyway")
-                } else {
-                    Log.d("AdminEquipment", "Equipment create failed: ${e.stackTraceToString()}")
-                    _error.value = "Failed to create equipment: ${e.message}"
+                Log.d("AdminEquipment", "Creating equipment: ${equipment.identifier}")
+                val currentUserId = authRepository.getCurrentUser()?.id ?: "unknown"
+                Log.d("AdminEquipment", "Current user ID: $currentUserId")
+
+                // First create the notification regardless of Supabase response
+                notificationService.notifyEquipmentChange(
+                    equipment = equipment,
+                    operation = "created",
+                    currentUserId = currentUserId
+                )
+                Log.d("AdminEquipment", "Notification sent successfully")
+
+                // Then attempt to create in Supabase
+                val createdEquipment = try {
+                    supabaseRepository.createEquipment(equipment)
+                } catch (e: Exception) {
+                    Log.e("AdminEquipment", "Supabase create failed, but notification sent", e)
+                    // Return the original equipment if Supabase fails
+                    equipment
                 }
+
+                Log.d("AdminEquipment", "Equipment created in Supabase: ${createdEquipment.equipment_id}")
+                _equipment.value += createdEquipment
+                Log.d("AdminEquipment", "Local state updated with new equipment")
+
+            } catch (e: Exception) {
+                Log.e("AdminEquipment", "Equipment create failed", e)
+                _error.value = "Failed to create equipment: ${e.message}"
             } finally {
                 _isLoading.value = false
                 Log.d("AdminEquipment", "Equipment creation flow completed")
@@ -122,6 +152,11 @@ class AdminViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 supabaseRepository.updateEquipment(equipment)
+                notificationService.notifyEquipmentChange(
+                    equipment = equipment,
+                    operation = "updated",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
                 loadAllData()
             } catch (e: Exception) {
                 if (e.message?.contains("Expected start of the array") == true) {
@@ -164,6 +199,11 @@ class AdminViewModel @Inject constructor(
                 }
             } finally {
                 _isLoading.value = false
+                notificationService.notifyBreakdownChange(
+                    breakdown = breakdown,
+                    operation = "created",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
                 Log.d("AdminEquipment", "Breakdown creation flow completed")
             }
         }
@@ -182,6 +222,11 @@ class AdminViewModel @Inject constructor(
                     _error.value = "Failed to update Breakdown: ${e.message}"
                 }
             } finally {
+                notificationService.notifyBreakdownChange(
+                    breakdown = breakdown,
+                    operation = "updated",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
                 _isLoading.value = false
                 Log.d("AdminBreakdown", "Breakdown update flow completed")
             }
@@ -211,6 +256,11 @@ class AdminViewModel @Inject constructor(
                 }
 
                 val createdAssignment = supabaseRepository.createAssignment(assignment)
+                notificationService.notifyAssignmentChange(
+                    assignment = createdAssignment,
+                    operation = "created",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
                 _assignments.value += createdAssignment
             } catch (e: Exception) {
                 if (e.message?.contains("foreign key constraint") == true) {
@@ -224,7 +274,6 @@ class AdminViewModel @Inject constructor(
                 }
             } finally {
                 _isLoading.value = false
-                Log.d("AdminAssignment", "Assignment create flow completed")
             }
         }
     }
@@ -233,7 +282,12 @@ class AdminViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                supabaseRepository.updateAssignmentStatus(assignmentId, status)
+                val updatedAssignment = supabaseRepository.updateAssignmentStatus(assignmentId, status)
+                notificationService.notifyAssignmentChange(
+                    assignment = updatedAssignment,
+                    operation = "updated",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
                 loadAllData()
             } catch (e: Exception) {
                 if (e.message?.contains("Expected start of the array") == true) {
@@ -244,7 +298,6 @@ class AdminViewModel @Inject constructor(
                 }
             } finally {
                 _isLoading.value = false
-                Log.d("AdminAssignment", "Assignment update flow completed")
             }
         }
     }
@@ -252,10 +305,21 @@ class AdminViewModel @Inject constructor(
     fun deleteAssignment(assignmentId: String) {
         viewModelScope.launch {
             try {
+                // Get assignment before deleting
+                val assignment = assignments.value.firstOrNull { it.assignment_id == assignmentId }
                 supabaseRepository.deleteAssignment(assignmentId)
+
+                assignment?.let {
+                    notificationService.notifyAssignmentChange(
+                        assignment = it,
+                        operation = "deleted",
+                        currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                    )
+                }
+
                 loadAllData()
             } catch (e: Exception) {
-                throw Exception("Error deleting assignment: ${e.message}")
+                _error.value = "Error deleting assignment: ${e.message}"
             }
         }
     }
@@ -263,34 +327,22 @@ class AdminViewModel @Inject constructor(
     fun deleteUser(userId: String) {
         viewModelScope.launch {
             try {
+                // Get user before deleting
+                val user = supabaseRepository.getUserProfile(userId)
                 supabaseRepository.deleteUser(userId)
+
+                user?.let {
+                    notificationService.notifyUserProfileChange(
+                        userProfile = it,
+                        operation = "deleted",
+                        currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                    )
+                }
+
                 loadAllData()
             } catch (e: Exception) {
-                throw Exception("Error deleting user: ${e.message}")
+                _error.value = "Error deleting user: ${e.message}"
             }
         }
     }
-
-    fun createNotificationForAssignment(
-        technicianId: String,
-        breakdownId: String,
-        breakdownDescription: String
-    ) {
-        viewModelScope.launch {
-            try {
-                val notification = Notification(
-                    user_id = technicianId,
-                    title = "New Assignment",
-                    message = "You've been assigned to a new breakdown",
-                    type = "assignment",
-                    related_id = breakdownId,
-                    breakdown_title = breakdownDescription.take(30)
-                )
-                supabaseRepository.createNotification(notification)
-            } catch (e: Exception) {
-                Log.e("Notification", "Failed to create notification", e)
-            }
-        }
-    }
-
 }

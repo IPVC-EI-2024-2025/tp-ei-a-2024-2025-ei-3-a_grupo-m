@@ -129,15 +129,15 @@ data class Chat(
 @Serializable
 data class Notification(
     val notification_id: String? = null,
-    val user_id: String,
+    val user_id: String, // Recipient user ID
     val title: String,
     val message: String,
-    val type: String,
-    val related_id: String?,
+    val related_id: String?, // ID of related entity (breakdown, assignment, etc.)
     val read: Boolean = false,
     val created_at: String? = null,
-    val breakdown_title: String? = null
+    val metadata: String? = null // JSON string for additional data
 )
+
 
 fun Breakdown.toBreakdownItem(): BreakdownItem {
     return BreakdownItem(
