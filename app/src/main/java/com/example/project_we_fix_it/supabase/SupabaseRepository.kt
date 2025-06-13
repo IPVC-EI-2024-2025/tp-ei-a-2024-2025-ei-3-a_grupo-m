@@ -633,10 +633,13 @@ class SupabaseRepository @Inject constructor() {
             Log.d("SupabaseRepo", "Title: ${notification.title}")
 
             val result = client.from("notifications")
-                .insert(notification)
-                .decodeSingleOrNull<Notification>()
+                .insert(notification) {
+                    // Explicitly set the returning type to ensure proper serialization
+                    select(columns = Columns.list("*"))
+                }
+                .decodeSingle<Notification>()
 
-            return@withContext result!!
+            return@withContext result
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error creating notification", e)
             throw Exception("Error creating notification: ${e.message}")
@@ -695,18 +698,24 @@ class SupabaseRepository @Inject constructor() {
     suspend fun getNotificationsForUser(userId: String): List<Notification> = withContext(Dispatchers.IO) {
         try {
             Log.d("SupabaseRepo", "Fetching notifications for user: $userId")
+
             val result = client.from("notifications")
                 .select {
                     filter {
                         eq("user_id", userId)
                     }
                     order("created_at", Order.DESCENDING)
-                }.decodeList<Notification>()
+                }
+                .decodeList<Notification>()
 
-            Log.d("SupabaseRepo", "Found ${result.size} notifications for user $userId")
+            Log.d("SupabaseRepo", "Query executed successfully. Found ${result.size} notifications")
+            result.forEach {
+                Log.d("SupabaseRepo", "Notification ID: ${it.notification_id}, Title: ${it.title}")
+            }
+
             return@withContext result
         } catch (e: Exception) {
-            Log.e("SupabaseRepo", "Error fetching notifications", e)
+            Log.e("SupabaseRepo", "Error fetching notifications for user $userId", e)
             emptyList()
         }
     }

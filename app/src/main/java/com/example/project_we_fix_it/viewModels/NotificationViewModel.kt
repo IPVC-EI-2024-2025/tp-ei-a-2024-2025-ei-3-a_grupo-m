@@ -16,7 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class NotificationViewModel @Inject constructor(
     private val supabaseRepository: SupabaseRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val notificationService: NotificationService
 ) : ViewModel() {
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications = _notifications.asStateFlow()
@@ -27,15 +28,24 @@ class NotificationViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
+    private val _newNotificationEvent = MutableStateFlow<Notification?>(null)
+    val newNotificationEvent = _newNotificationEvent.asStateFlow()
+
 
     fun loadNotifications(userId: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                Log.d("NotificationVM", "Loading notifications for user: $userId")
                 val notifications = supabaseRepository.getNotificationsForUser(userId)
+                Log.d("NotificationVM", "Retrieved ${notifications.size} notifications")
+
                 _notifications.value = notifications
-                _unreadCount.value = notifications.count { notification ->
-                    !notification.read
+                _unreadCount.value = notifications.count { !it.read }
+
+                // Debug log the first few notifications
+                notifications.take(3).forEach {
+                    Log.d("NotificationVM", "Notification: ${it.title} - ${it.message} - Read: ${it.read}")
                 }
             } catch (e: Exception) {
                 Log.e("NotificationVM", "Error loading notifications", e)
@@ -54,5 +64,17 @@ class NotificationViewModel @Inject constructor(
                 Log.e("NotificationVM", "Error marking as read", e)
             }
         }
+    }
+
+    fun handleNewNotification(notification: Notification) {
+        _notifications.value += notification
+        if (!notification.read) {
+            _unreadCount.value += 1
+        }
+        _newNotificationEvent.value = notification
+    }
+
+    fun resetNewNotificationEvent() {
+        _newNotificationEvent.value = null
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +41,15 @@ fun NotificationsScreen(
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val userId = authState.user?.id
 
+    LaunchedEffect(userId) {
+        Log.d("NotificationsScreen", "UserId changed: $userId")
+        userId?.let {
+            notificationViewModel.loadNotifications(it)
+        } ?: run {
+            Log.w("NotificationsScreen", "No user ID available")
+        }
+    }
+
     LaunchedEffect(notifications) {
         Log.d("NotificationsScreen", "Notifications: ${notifications.size}, Unread: $unreadCount")
         notifications.forEach {
@@ -52,6 +62,8 @@ fun NotificationsScreen(
         if (notifications.isNotEmpty()) {
             Log.d("NotificationsScreen", "First notification: ${notifications.first().title}")
             Log.d("NotificationsScreen", "Unread count: $unreadCount")
+        } else {
+            Log.d("NotificationsScreen", "No notifications found")
         }
     }
 
@@ -62,6 +74,18 @@ fun NotificationsScreen(
                     Text("Notifications ${if (unreadCount > 0) "($unreadCount)" else ""}")
                 },
                 actions = {
+                    // Refresh button - always visible
+                    IconButton(
+                        onClick = {
+                            userId?.let {
+                                notificationViewModel.loadNotifications(it)
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
+
+                    // Mark all as read button - only visible when there are notifications
                     if (notifications.isNotEmpty()) {
                         IconButton(
                             onClick = {

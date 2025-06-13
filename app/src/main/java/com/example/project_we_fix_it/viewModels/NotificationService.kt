@@ -18,7 +18,6 @@ class NotificationService @Inject constructor(
     private val supabaseRepository: SupabaseRepository,
     private val authRepository: AuthRepository
 ) {
-    private val TAG = "NotificationService"
 
     // Common method to create notifications
     private suspend fun createNotification(
@@ -29,21 +28,25 @@ class NotificationService @Inject constructor(
         metadata: String? = null
     ) {
         try {
-            Log.d(TAG, "Creating notification for user $userId")
-            Log.d(TAG, "Title: $title, Message: $message")
+            Log.d("NotificationService", "Creating notification for user $userId")
+            Log.d("NotificationService", "Title: $title, Message: $message")
 
             val notification = Notification(
                 user_id = userId,
                 title = title,
                 message = message,
                 related_id = relatedId,
-                metadata = metadata
+                metadata = metadata,
+                read = false,
+                created_at = null,
+                notification_id = null
             )
 
-            Log.d(TAG, "Notification object created, attempting to insert")
+            Log.d("NotificationService", "Notification object created, attempting to insert")
             val result = supabaseRepository.createNotification(notification)
+            Log.d("NotificationService", "Notification created successfully: $result")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to create notification", e)
+            Log.e("NotificationService", "Failed to create notification", e)
         }
     }
 
@@ -96,23 +99,23 @@ class NotificationService @Inject constructor(
         operation: String,
         currentUserId: String
     ) {
-        Log.d(TAG, "Starting equipment notification for ${equipment.equipment_id}")
+        Log.d("NotificationService", "Starting equipment notification for ${equipment.equipment_id}")
         try {
             val affectedUserIds = when (operation) {
                 "deleted" -> {
-                    Log.d(TAG, "Getting users to notify for deletion")
+                    Log.d("NotificationService", "Getting users to notify for deletion")
                     val admins = supabaseRepository.getUserIdsByRole("admin")
                     val managers = supabaseRepository.getUserIdsByRole("manager")
-                    Log.d(TAG, "Found ${admins.size} admins and ${managers.size} managers")
+                    Log.d("NotificationService", "Found ${admins.size} admins and ${managers.size} managers")
                     admins + managers
                 }
                 else -> {
-                    Log.d(TAG, "Default notification to current user only")
+                    Log.d("NotificationService", "Default notification to current user only")
                     listOf(currentUserId)
                 }
             }.distinct()
 
-            Log.d(TAG, "Notifying ${affectedUserIds.size} users about equipment $operation")
+            Log.d("NotificationService", "Notifying ${affectedUserIds.size} users about equipment $operation")
 
             notifyCrudOperation(
                 entityType = "equipment",
@@ -123,9 +126,9 @@ class NotificationService @Inject constructor(
                 affectedUserIds = affectedUserIds,
                 additionalMetadata = mapOf("type" to equipment.type)
             )
-            Log.d(TAG, "Equipment notification completed successfully")
+            Log.d("NotificationService", "Equipment notification completed successfully")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send equipment notification", e)
+            Log.e("NotificationService", "Failed to send equipment notification", e)
         }
     }
 
@@ -299,7 +302,7 @@ class NotificationService @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send message notification", e)
+            Log.e("NotificationService", "Failed to send message notification", e)
         }
     }
 }
