@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_we_fix_it.auth.AuthRepository
 import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.supabase.Breakdown
 import com.example.project_we_fix_it.supabase.Chat
 import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
@@ -32,6 +33,10 @@ class ChatViewModel @Inject constructor(
     private val _participantProfiles = MutableStateFlow<Map<String, UserProfile>>(emptyMap())
     val participantProfiles: StateFlow<Map<String, UserProfile>> = _participantProfiles.asStateFlow()
 
+    private val _breakdowns = MutableStateFlow<List<Breakdown>>(emptyList())
+    val breakdowns: StateFlow<List<Breakdown>> = _breakdowns.asStateFlow()
+
+
     val currentUserId = authRepository.getCurrentUser()?.id
 
 
@@ -44,6 +49,8 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+
+                _breakdowns.value = repository.getAllBreakdowns()
                 // Get current user ID
                 val userId = currentUserId ?: return@launch
 

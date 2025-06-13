@@ -126,16 +126,28 @@ data class Chat(
     val participants: List<String>
 )
 
-// Add this to your models file or a new file like BreakdownExtensions.kt
+@Serializable
+data class Notification(
+    val notification_id: String? = null,
+    val user_id: String,
+    val title: String,
+    val message: String,
+    val type: String,
+    val related_id: String?,
+    val read: Boolean = false,
+    val created_at: String? = null,
+    val breakdown_title: String? = null
+)
+
 fun Breakdown.toBreakdownItem(): BreakdownItem {
     return BreakdownItem(
-        id = breakdown_id ?: "", // Handle null ID case
-        title = equipment_id ?: "Breakdown", // Use equipment ID as title or default
+        id = breakdown_id ?: "",
+        title = equipment_id ?: "Breakdown",
         description = description,
         priority = when (urgency_level) {
             "high" -> 1
             "medium" -> 2
-            else -> 3 // default to low priority
+            else -> 3
         }
     )
 }

@@ -72,6 +72,7 @@ fun MyBreakdownsScreen(
         authViewModel = authViewModel,
         showBackButton = true,
         onBackClick = commonActions.onBackClick,
+        notificationViewModel = hiltViewModel(),
         actions = {
             IconButton(onClick = { /* Handle filter action */ }) {
                 Icon(

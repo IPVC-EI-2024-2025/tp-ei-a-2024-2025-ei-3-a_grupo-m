@@ -56,6 +56,7 @@ fun AdminDashboardScreen(
         onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
         onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
         onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         Column(
             modifier = Modifier

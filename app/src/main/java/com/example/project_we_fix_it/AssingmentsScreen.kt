@@ -231,6 +231,7 @@ fun MyAssignmentsScreen(
         onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
         onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
         onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         Column(
             modifier = Modifier
@@ -256,14 +257,36 @@ fun MyAssignmentsScreen(
 
             // Content based on selected tab
             when (selectedTabIndex) {
-                0 -> WorkingOnBreakdowns(
-                    workingOnBreakdownItems,
-                    onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
-                )
-                1 -> AssignedBreakdowns(
-                    assignedBreakdownItems,
-                    onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
-                )
+                0 -> {
+                    if (workingOnBreakdownItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No breakdowns in progress")
+                        }
+                    } else {
+                        WorkingOnBreakdowns(
+                            workingOnBreakdownItems,
+                            onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
+                        )
+                    }
+                }
+                1 -> {
+                    if (assignedBreakdownItems.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("No assigned breakdowns")
+                        }
+                    } else {
+                        AssignedBreakdowns(
+                            assignedBreakdownItems,
+                            onBreakdownClick = { id -> commonActions.navigateToBreakdownDetails(id) }
+                        )
+                    }
+                }
             }
         }
     }

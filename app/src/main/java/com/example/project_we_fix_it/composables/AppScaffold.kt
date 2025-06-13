@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.viewModels.NotificationViewModel
 import io.ktor.websocket.Frame
 import kotlinx.coroutines.launch
 
@@ -50,6 +51,7 @@ fun WeFixItAppScaffold(
     actions: @Composable RowScope.() -> Unit = {},
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
+    notificationViewModel: NotificationViewModel = hiltViewModel(),
     content: @Composable (PaddingValues) -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -59,6 +61,8 @@ fun WeFixItAppScaffold(
     // Handle auth state changes
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val userRole = authState.userProfile?.role ?: "technician"
+
+    val unreadCount by notificationViewModel.unreadCount.collectAsStateWithLifecycle()
 
     LaunchedEffect(authState.isLoggedIn) {
         if (!authState.isLoggedIn && !authState.isLoading) {
@@ -173,7 +177,8 @@ fun WeFixItAppScaffold(
                     currentRoute = currentRoute,
                     onProfileClick = onNavigateToProfile,
                     onHomeClick = onNavigateToHome,
-                    onNotificationsClick = onNavigateToNotifications
+                    onNotificationsClick = onNavigateToNotifications,
+                    unreadCount = unreadCount
                 )
             },
             content = content

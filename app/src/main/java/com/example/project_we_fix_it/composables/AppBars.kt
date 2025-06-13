@@ -79,7 +79,8 @@ fun WeFixItBottomBar(
     currentRoute: String,
     onProfileClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onNotificationsClick: () -> Unit
+    onNotificationsClick: () -> Unit,
+    unreadCount: Int = 0
 ) {
     BottomAppBar(
         containerColor = Color.White,
@@ -114,10 +115,20 @@ fun WeFixItBottomBar(
             )
             NavigationBarItem(
                 icon = {
-                    Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_popup_reminder),
-                        contentDescription = "Notifications"
-                    )
+                    BadgedBox(
+                        badge = {
+                            if (unreadCount > 0) {
+                                Badge {
+                                    Text(unreadCount.toString())
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = AndroidR.drawable.ic_popup_reminder),
+                            contentDescription = "Notifications"
+                        )
+                    }
                 },
                 label = { Text("Notifications") },
                 selected = currentRoute == "notifications",

@@ -61,7 +61,7 @@ fun DashboardMenuItemRow(
 
 @Composable
 fun BreakdownCard(
-    breakdown: Any, // Accept either type
+    breakdown: Any,
     onClick: () -> Unit,
     trailingContent: @Composable () -> Unit = {}
 ) {

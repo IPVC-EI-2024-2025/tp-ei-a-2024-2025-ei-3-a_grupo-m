@@ -7,6 +7,7 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Assignment
 import com.example.project_we_fix_it.supabase.Breakdown
 import com.example.project_we_fix_it.supabase.Equipment
+import com.example.project_we_fix_it.supabase.Notification
 import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -266,6 +267,28 @@ class AdminViewModel @Inject constructor(
                 loadAllData()
             } catch (e: Exception) {
                 throw Exception("Error deleting user: ${e.message}")
+            }
+        }
+    }
+
+    fun createNotificationForAssignment(
+        technicianId: String,
+        breakdownId: String,
+        breakdownDescription: String
+    ) {
+        viewModelScope.launch {
+            try {
+                val notification = Notification(
+                    user_id = technicianId,
+                    title = "New Assignment",
+                    message = "You've been assigned to a new breakdown",
+                    type = "assignment",
+                    related_id = breakdownId,
+                    breakdown_title = breakdownDescription.take(30)
+                )
+                supabaseRepository.createNotification(notification)
+            } catch (e: Exception) {
+                Log.e("Notification", "Failed to create notification", e)
             }
         }
     }

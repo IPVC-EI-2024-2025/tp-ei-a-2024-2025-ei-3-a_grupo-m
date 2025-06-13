@@ -81,6 +81,7 @@ fun BreakdownManagementScreen(
         onLogout = commonActions.logout,
         showBackButton = true,
         onBackClick = commonActions.onBackClick,
+        notificationViewModel = hiltViewModel(),
         actions = {
             IconButton(onClick = { showCreateDialog = true }) {
                 Icon(
@@ -217,7 +218,9 @@ fun BreakdownManagementScreen(
                 }
                 showTechnicianDialog = false
                 selectedBreakdown = null
-            }
+            },
+            viewModel = viewModel, // Passe o viewModel
+            breakdown = selectedBreakdown!! // Passe a avaria selecionada
         )
     }
 
@@ -358,7 +361,9 @@ private fun BreakdownCard(
 private fun TechnicianAssignmentDialog(
     technicians: List<UserProfile>,
     onDismiss: () -> Unit,
-    onAssign: (String) -> Unit
+    onAssign: (String) -> Unit,
+    viewModel: AdminViewModel,
+    breakdown: Breakdown
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -374,6 +379,11 @@ private fun TechnicianAssignmentDialog(
                                 .fillMaxWidth()
                                 .clickable {
                                     onAssign(technician.user_id)
+                                    viewModel.createNotificationForAssignment(
+                                        technicianId = technician.user_id,
+                                        breakdownId = breakdown.breakdown_id ?: "",
+                                        breakdownDescription = breakdown.description
+                                    )
                                 }
                                 .padding(4.dp),
                             elevation = CardDefaults.cardElevation(2.dp)

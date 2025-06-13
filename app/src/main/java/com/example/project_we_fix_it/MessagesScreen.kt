@@ -24,6 +24,7 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.Breakdown
 import com.example.project_we_fix_it.supabase.Chat
 import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.ChatViewModel
@@ -34,6 +35,7 @@ fun ChatItem(
     chat: Chat,
     participantProfiles: Map<String, UserProfile>,
     currentUserId: String?,
+    breakdowns: List<Breakdown>,
     onClick: () -> Unit
 ) {
     // Filter out current user from participants
@@ -43,6 +45,10 @@ fun ChatItem(
         participantProfiles[it]?.name ?: "Unknown"
     }
     Log.d("ChatItem", "Participant Names: $participantNames")
+
+    val breakdownName = chat.breakdown_id?.let { breakdownId ->
+        breakdowns.firstOrNull { it.breakdown_id == breakdownId }?.description?.take(30)
+    } ?: "Breakdown Chat"
 
     Card(
         modifier = Modifier
@@ -65,9 +71,9 @@ fun ChatItem(
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // Participant names
+                // BREAKDOWN names
                 Text(
-                    text = participantNames,
+                    text = breakdownName,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -112,6 +118,8 @@ fun MessagesScreen(
     val participantProfiles by viewModel.participantProfiles.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentUserId = viewModel.currentUserId
+    val breakdowns by viewModel.breakdowns.collectAsState()
+
 
     val error by viewModel.error.collectAsState()
     if (error != null) {
@@ -143,7 +151,8 @@ fun MessagesScreen(
         onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = commonActions.onBackClick
+        onBackClick = commonActions.onBackClick,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
 
         Log.d("MessagesScreen", "Chats: $chats")
@@ -166,6 +175,7 @@ fun MessagesScreen(
                         chat = chat,
                         participantProfiles = participantProfiles,
                         currentUserId = currentUserId,
+                        breakdowns = breakdowns,
                         onClick = {
                             chat.chat_id?.let { chatId ->
                                 navigator.navigateToChat(chatId)

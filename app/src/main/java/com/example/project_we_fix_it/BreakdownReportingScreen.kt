@@ -62,7 +62,8 @@ fun BreakdownReportingScreen(
         onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
         onLogout = commonActions.logout,
         showBackButton = true,
-        onBackClick = commonActions.onBackClick
+        onBackClick = commonActions.onBackClick,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         if (isLoading) {
             Box(

@@ -83,6 +83,13 @@ fun AppNavigation(
                 authViewModel = hiltViewModel()
             )
         }
+        composable(Routes.NOTIFICATIONS) {
+            NotificationsScreen(
+                commonActions = navigator.getCommonActions(showBackButton = true),
+                authViewModel = hiltViewModel(),
+                notificationViewModel = hiltViewModel()
+            )
+        }
 
         // Admin-specific routes
         if (isAdmin) {

@@ -85,7 +85,8 @@ fun ChatScreen(
         onLogout = commonActions.logout,
         authViewModel = authViewModel,
         showBackButton = true,
-        onBackClick = commonActions.onBackClick
+        onBackClick = commonActions.onBackClick,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         Column(
             modifier = Modifier

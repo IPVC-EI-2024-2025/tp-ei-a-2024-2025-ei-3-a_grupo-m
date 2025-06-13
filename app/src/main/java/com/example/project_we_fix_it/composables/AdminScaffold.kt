@@ -2,6 +2,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 
@@ -48,6 +49,7 @@ fun AdminScaffold(
         onBackClick = onBackClick,
         actions = actions,
         onLogout = onLogout,
-        content = content
+        content = content,
+        notificationViewModel = hiltViewModel()
     )
 }

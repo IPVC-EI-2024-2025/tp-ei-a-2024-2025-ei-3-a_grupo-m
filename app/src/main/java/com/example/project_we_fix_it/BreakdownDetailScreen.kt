@@ -7,7 +7,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,6 +42,22 @@ fun BreakdownDetailsScreen(
     val breakdown by breakdownViewModel.breakdown.collectAsState()
     val isLoading by breakdownViewModel.isLoading.collectAsState()
     val createdChatId by chatViewModel.createdChatId.collectAsState()
+    var showDialog by remember { mutableStateOf(false) }
+    // show text logic
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Cannot Start Chat") },
+            text = { Text("Someone needs to be assigned to talk in this chat") },
+            confirmButton = {
+                Button(onClick = { showDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
 
     WeFixItAppScaffold(
         title = "Breakdown Details",
@@ -57,6 +76,7 @@ fun BreakdownDetailsScreen(
         onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
         onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
         onLogout = commonActions.logout,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         if (isLoading) {
             Box(
@@ -162,6 +182,8 @@ fun BreakdownDetailsScreen(
                                             breakdownId = bd.breakdown_id,
                                             participants = participants
                                         )
+                                    } else {
+                                        showDialog = true
                                     }
                                 }
                             }

@@ -9,6 +9,7 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale.filter
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Clock.System.now
@@ -393,6 +394,7 @@ class SupabaseRepository @Inject constructor() {
             client.from("assignments")
                 .insert(assignment)
                 .decodeSingle()
+
         } catch (e: Exception) {
             throw Exception("Error creating assignment: ${e.message}")
         }
@@ -621,7 +623,55 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
+// ====================== NOTIFICATIONS ======================================
+
+
+    suspend fun createNotification(notification: Notification): Notification = withContext(Dispatchers.IO) {
+        try {
+            client.from("notifications")
+                .insert(notification)
+                .decodeSingle()
+        } catch (e: Exception) {
+            throw Exception("Error creating notification: ${e.message}")
+        }
+    }
+
+    suspend fun getUnreadNotifications(userId: String): List<Notification> = withContext(Dispatchers.IO) {
+        try {
+            client.from("notifications")
+                .select {
+                    filter {
+                        eq("user_id", userId)
+                        eq("read", false)
+                    }
+                    order("created_at", Order.DESCENDING)
+                }
+                .decodeList()
+        } catch (e: Exception) {
+            throw Exception("Error fetching notifications: ${e.message}")
+        }
+    }
+
+    suspend fun markNotificationsAsRead(userId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("notifications")
+                .update({
+                    set("read", true)
+                }) {
+                    filter {
+                        eq("user_id", userId)
+                        eq("read", false)
+                    }
+                }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }
+
+
 
 
 

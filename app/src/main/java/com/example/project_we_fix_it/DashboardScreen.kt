@@ -65,6 +65,7 @@ fun DashboardScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .padding(horizontal = 16.dp)
+                    .padding(bottom = 72.dp)
             ) {
                 if (error != null) {
                     Text(
@@ -100,126 +101,133 @@ fun DashboardScreen(
                         Text("No active breakdowns found")
                     }
                 } else {
-                    LazyColumn {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         items(breakdowns) { breakdown ->
-                            BreakdownCard(
-                                breakdown = BreakdownItem(
-                                    id = breakdown.breakdown_id ?: "",
-                                    title = breakdown.description.take(30),
-                                    description = breakdown.description,
-                                    priority = when (breakdown.urgency_level) {
-                                        "critical" -> 3
-                                        "high" -> 2
-                                        else -> 1
+                            Box(modifier = Modifier.padding(vertical = 8.dp)) {
+                                BreakdownCard(
+                                    breakdown = BreakdownItem(
+                                        id = breakdown.breakdown_id ?: "",
+                                        title = breakdown.description.take(30),
+                                        description = breakdown.description,
+                                        priority = when (breakdown.urgency_level) {
+                                            "critical" -> 3
+                                            "high" -> 2
+                                            else -> 1
+                                        }
+                                    ),
+                                    onClick = {
+                                        breakdown.breakdown_id?.let { id ->
+                                            commonActions.navigateToBreakdownDetails(id)
+                                        }
                                     }
-                                ),
-                                onClick = {
-                                    breakdown.breakdown_id?.let { id ->
-                                        commonActions.navigateToBreakdownDetails(id)
-                                    }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
-                }
 
-                // Bottom sheet handle
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                if (dragAmount.y < -10) {
-                                    showBottomSheet = true
-                                }
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
+
+                    // Bottom sheet handle
                     Box(
                         modifier = Modifier
-                            .size(width = 32.dp, height = 4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color.Gray)
-                            .clickable { showBottomSheet = true }
-                    )
-                }
-            }
-
-            if (showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showBottomSheet = false },
-                    sheetState = bottomSheetState,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    dragHandle = {
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    if (dragAmount.y < -10) {
+                                        showBottomSheet = true
+                                    }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                                .size(width = 32.dp, height = 4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(Color.Gray)
+                                .clickable { showBottomSheet = true }
+                        )
+                    }
+                }
+
+                if (showBottomSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showBottomSheet = false },
+                        sheetState = bottomSheetState,
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.padding(top = 64.dp),
+                        dragHandle = {
                             Box(
                                 modifier = Modifier
-                                    .size(width = 32.dp, height = 4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(Color.Gray)
-                            )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 32.dp, height = 4.dp)
+                                        .clip(RoundedCornerShape(2.dp))
+                                        .background(Color.Gray)
+                                )
+                            }
                         }
-                    }
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                commonActions.navigateToBreakdownReporting()
-                                showBottomSheet = false
-                            },
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                                .padding(horizontal = 16.dp, vertical = 16.dp)
                         ) {
-                            Text(
-                                "Report a breakdown",
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 16.sp
-                            )
+                            Button(
+                                onClick = {
+                                    commonActions.navigateToBreakdownReporting()
+                                    showBottomSheet = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    "Report a breakdown",
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 16.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    commonActions.navigateToAssignments()
+                                    showBottomSheet = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    "View Assignments",
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 16.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(24.dp))
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                commonActions.navigateToAssignments()
-                                showBottomSheet = false
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                "View Assignments",
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 16.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
             }
         }
     }
-}
+ }
