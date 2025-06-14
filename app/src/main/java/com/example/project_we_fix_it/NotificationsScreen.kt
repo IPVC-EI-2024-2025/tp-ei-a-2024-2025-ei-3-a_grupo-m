@@ -8,12 +8,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,6 +43,7 @@ fun NotificationsScreen(
     val notifications by notificationViewModel.notifications.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val userId = authState.user?.id
+    val showDeleteDialog = remember { mutableStateOf(false) }
 
     LaunchedEffect(userId) {
         Log.d("NotificationsScreen", "UserId changed: $userId")
@@ -67,6 +71,31 @@ fun NotificationsScreen(
         }
     }
 
+    if (showDeleteDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog.value = false },
+            title = { Text("Delete all notifications?") },
+            text = { Text("This will permanently remove all your notifications.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog.value = false
+                        userId?.let { notificationViewModel.deleteAllNotifications(it) }
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog.value = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,7 +103,6 @@ fun NotificationsScreen(
                     Text("Notifications ${if (unreadCount > 0) "($unreadCount)" else ""}")
                 },
                 actions = {
-                    // Refresh button - always visible
                     IconButton(
                         onClick = {
                             userId?.let {
@@ -85,16 +113,21 @@ fun NotificationsScreen(
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
 
-                    // Mark all as read button - only visible when there are notifications
                     if (notifications.isNotEmpty()) {
                         IconButton(
                             onClick = {
-                                userId?.let {
-                                    notificationViewModel.markAsRead(it)
+                                userId?.let { id ->
+                                    notificationViewModel.markAllAsRead(id)
                                 }
                             }
                         ) {
                             Icon(Icons.Default.ClearAll, contentDescription = "Mark all as read")
+                        }
+
+                        IconButton(
+                            onClick = { showDeleteDialog.value = true }
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete all notifications")
                         }
                     }
                 }
@@ -124,9 +157,6 @@ fun NotificationsScreen(
                             notification = notification,
                             onClick = {
                                 handleNotificationClick(notification, commonActions)
-                                if (!notification.read) {
-                                    userId?.let { notificationViewModel.markAsRead(it) }
-                                }
                             }
                         )
                     }
@@ -194,7 +224,17 @@ fun NotificationItem(
                 metadata?.let {
                     Spacer(modifier = Modifier.height(4.dp))
                     Column {
-                        it.forEach { (key, value) ->
+                        // Display "by" field with name instead of ID
+                        if (it.containsKey("by")) {
+                            Text(
+                                text = "By: ${it["by"]}",
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        // Display other metadata fields except 'by'
+                        it.filter { (key, _) -> key != "by" }.forEach { (key, value) ->
                             Text(
                                 text = "$key: $value",
                                 style = MaterialTheme.typography.labelSmall,

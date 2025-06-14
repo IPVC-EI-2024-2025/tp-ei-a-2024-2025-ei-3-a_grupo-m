@@ -665,9 +665,7 @@ class SupabaseRepository @Inject constructor() {
     suspend fun markNotificationsAsRead(userId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             client.from("notifications")
-                .update({
-                    set("read", true)
-                }) {
+                .update({ set("read", true) }) {
                     filter {
                         eq("user_id", userId)
                         eq("read", false)
@@ -675,6 +673,22 @@ class SupabaseRepository @Inject constructor() {
                 }
             true
         } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error marking notifications as read", e)
+            false
+        }
+    }
+
+    suspend fun deleteAllNotifications(userId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            client.from("notifications")
+                .delete {
+                    filter {
+                        eq("user_id", userId)
+                    }
+                }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error deleting notifications", e)
             false
         }
     }

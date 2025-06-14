@@ -19,7 +19,6 @@ class NotificationService @Inject constructor(
     private val authRepository: AuthRepository
 ) {
 
-    // Common method to create notifications
     private suspend fun createNotification(
         userId: String,
         title: String,
@@ -51,14 +50,62 @@ class NotificationService @Inject constructor(
     }
 
     private suspend fun notifyCrudOperation(
-        entityType: String, // "equipment", "breakdown", "assignment", etc.
-        operation: String,  // "created", "updated", "deleted"
+        entityType: String,
+        operation: String,
         entityId: String?,
         entityName: String? = null,
         currentUserId: String,
         affectedUserIds: List<String>,
         additionalMetadata: Map<String, String> = emptyMap()
     ) {
+        val currentUserName = supabaseRepository.getUserProfile(currentUserId)?.name ?: "System"
+
+        if (entityType == "assignment") {
+            val (title, message) = when (operation) {
+                "created" -> {
+                    if (additionalMetadata["technician_id"] in affectedUserIds) {
+                        "New Assignment" to "You were assigned to this breakdown"
+                    } else {
+                        "Assignment Created" to "Technician assigned to breakdown"
+                    }
+                }
+                "updated" -> {
+                    if (additionalMetadata["technician_id"] in affectedUserIds) {
+                        "Assignment Updated" to "Your assignment was updated"
+                    } else {
+                        "Assignment Updated" to "Assignment was modified"
+                    }
+                }
+                "deleted" -> {
+                    if (additionalMetadata["technician_id"] in affectedUserIds) {
+                        "Assignment Removed" to "You were removed from this assignment"
+                    } else {
+                        "Assignment Removed" to "Assignment was removed"
+                    }
+                }
+                else -> {
+                    "Assignment Change" to "Assignment status changed"
+                }
+            }
+
+            val metadata = buildMap {
+                put("operation", operation)
+                put("by", currentUserName) // Sempre o nome, nunca ID
+                putAll(additionalMetadata.filter { it.key != "by" })
+            }.let { Json.encodeToString(it) }
+
+            affectedUserIds.forEach { userId ->
+                createNotification(
+                    userId = userId,
+                    title = title,
+                    message = message,
+                    relatedId = entityId,
+                    metadata = metadata
+                )
+            }
+            return
+        }
+
         val title = when (operation) {
             "created" -> "New $entityType"
             "updated" -> "$entityType Updated"
@@ -73,14 +120,11 @@ class NotificationService @Inject constructor(
             else -> "$entityType${entityName?.let { " $it" } ?: ""} was modified"
         }
 
-        // Combine standard metadata with any additional metadata
         val metadata = buildMap {
             put("operation", operation)
-            put("by", currentUserId)
+            put("by", currentUserName)
             putAll(additionalMetadata)
-        }.let {
-            Json.encodeToString(it)
-        }
+        }.let { Json.encodeToString(it) }
 
         affectedUserIds.forEach { userId ->
             createNotification(
@@ -93,7 +137,6 @@ class NotificationService @Inject constructor(
         }
     }
 
-    // Example usage for equipment
     suspend fun notifyEquipmentChange(
         equipment: Equipment,
         operation: String,
@@ -132,17 +175,14 @@ class NotificationService @Inject constructor(
         }
     }
 
-    // Example usage for breakdown
     suspend fun notifyBreakdownChange(
         breakdown: Breakdown,
         operation: String,
         currentUserId: String
     ) {
         val affectedUserIds = buildList {
-            // Always include reporter
             breakdown.reporter_id?.let { add(it) }
 
-            // For existing breakdowns, include assigned technicians
             if (operation != "created" && breakdown.breakdown_id != null) {
                 addAll(
                     supabaseRepository.getAllAssignments()
@@ -151,7 +191,6 @@ class NotificationService @Inject constructor(
                 )
             }
 
-            // For deletions, might want to include additional roles
             if (operation == "deleted") {
                 addAll(supabaseRepository.getUserIdsByRole("admin"))
             }
@@ -177,38 +216,25 @@ class NotificationService @Inject constructor(
         currentUserId: String
     ) {
         val affectedUserIds = buildList {
-            // Always include the assigned technician
             assignment.technician_id?.let { add(it) }
-
-            // Include the assigner (if different from current user)
             assignment.assigned_by?.takeIf { it != currentUserId }?.let { add(it) }
-
-            // For deletions, include admins
-            if (operation == "deleted") {
-                addAll(supabaseRepository.getUserIdsByRole("admin"))
-            }
+            if (operation == "deleted") addAll(supabaseRepository.getUserIdsByRole("admin"))
         }.distinct()
-
-        // Get breakdown details for the message
-        val breakdown = assignment.breakdown_id?.let {
-            supabaseRepository.getBreakdownById(it)
-        }
 
         notifyCrudOperation(
             entityType = "assignment",
             operation = operation,
             entityId = assignment.assignment_id,
-            entityName = breakdown?.description?.take(30)?.let { "$it..." } ?: "Assignment",
             currentUserId = currentUserId,
             affectedUserIds = affectedUserIds,
             additionalMetadata = mapOf(
                 "status" to assignment.status,
-                "breakdown_id" to (assignment.breakdown_id ?: "")
+                "breakdown_id" to (assignment.breakdown_id ?: ""),
+                "technician_id" to (assignment.technician_id ?: "")
             )
         )
     }
 
-    // User profile notifications
     suspend fun notifyUserProfileChange(
         userProfile: UserProfile,
         operation: String,
@@ -216,12 +242,10 @@ class NotificationService @Inject constructor(
     ) {
         val affectedUserIds = when (operation) {
             "created", "deleted" -> {
-                // Notify admins about user creation/deletion
                 supabaseRepository.getUserIdsByRole("admin")
                     .filter { it != currentUserId } // Don't notify self
             }
             "updated" -> {
-                // For updates, notify the user themselves and admins
                 listOf(userProfile.user_id) +
                         supabaseRepository.getUserIdsByRole("admin")
                             .filter { it != currentUserId }
@@ -243,14 +267,11 @@ class NotificationService @Inject constructor(
         )
     }
 
-
-    // Chat notifications
     suspend fun notifyChatChange(
         chat: Chat,
         operation: String,
         currentUserId: String
     ) {
-        // Notify all participants except the current user
         val affectedUserIds = chat.participants
             .filter { it != currentUserId }
             .distinct()
@@ -271,7 +292,6 @@ class NotificationService @Inject constructor(
         )
     }
 
-    // Message notifications
     suspend fun notifyNewMessage(
         message: Message,
         currentUserId: String
@@ -282,7 +302,6 @@ class NotificationService @Inject constructor(
                 supabaseRepository.getChatByBreakdownId(it)
             } ?: return
 
-            // Notify all participants except the sender
             val affectedUserIds = chat.participants
                 .filter { it != message.sender_id }
                 .distinct()

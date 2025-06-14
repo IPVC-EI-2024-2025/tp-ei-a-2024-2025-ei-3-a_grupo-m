@@ -43,7 +43,6 @@ class NotificationViewModel @Inject constructor(
                 _notifications.value = notifications
                 _unreadCount.value = notifications.count { !it.read }
 
-                // Debug log the first few notifications
                 notifications.take(3).forEach {
                     Log.d("NotificationVM", "Notification: ${it.title} - ${it.message} - Read: ${it.read}")
                 }
@@ -55,13 +54,35 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
-    fun markAsRead(userId: String) {
+    fun markAllAsRead(userId: String) {
         viewModelScope.launch {
             try {
-                supabaseRepository.markNotificationsAsRead(userId)
-                loadNotifications(userId) // Refresh the list
+                val success = supabaseRepository.markNotificationsAsRead(userId)
+                if (success) {
+                    _notifications.value = _notifications.value.map {
+                        it.copy(read = true)
+                    }
+                    _unreadCount.value = 0
+                }
             } catch (e: Exception) {
-                Log.e("NotificationVM", "Error marking as read", e)
+                Log.e("NotificationVM", "Error marking all as read", e)
+            }
+        }
+    }
+
+    fun deleteAllNotifications(userId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val success = supabaseRepository.deleteAllNotifications(userId)
+                if (success) {
+                    _notifications.value = emptyList()
+                    _unreadCount.value = 0
+                }
+            } catch (e: Exception) {
+                Log.e("NotificationVM", "Error deleting notifications", e)
+            } finally {
+                _isLoading.value = false
             }
         }
     }
