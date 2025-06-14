@@ -61,7 +61,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    //User
     fun createUser(user: UserProfile) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -117,7 +116,6 @@ class AdminViewModel @Inject constructor(
                 val currentUserId = authRepository.getCurrentUser()?.id ?: "unknown"
                 Log.d("AdminEquipment", "Current user ID: $currentUserId")
 
-                // First create the notification regardless of Supabase response
                 notificationService.notifyEquipmentChange(
                     equipment = equipment,
                     operation = "created",
@@ -125,12 +123,10 @@ class AdminViewModel @Inject constructor(
                 )
                 Log.d("AdminEquipment", "Notification sent successfully")
 
-                // Then attempt to create in Supabase
                 val createdEquipment = try {
                     supabaseRepository.createEquipment(equipment)
                 } catch (e: Exception) {
                     Log.e("AdminEquipment", "Supabase create failed, but notification sent", e)
-                    // Return the original equipment if Supabase fails
                     equipment
                 }
 
@@ -183,7 +179,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    //Breakdowns
     fun createBreakdown(breakdown: Breakdown) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -244,7 +239,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    //Assignments
     fun createAssignment(assignment: Assignment) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -327,7 +321,6 @@ class AdminViewModel @Inject constructor(
     fun deleteUser(userId: String) {
         viewModelScope.launch {
             try {
-                // Get user before deleting
                 val user = supabaseRepository.getUserProfile(userId)
                 supabaseRepository.deleteUser(userId)
 
@@ -342,6 +335,37 @@ class AdminViewModel @Inject constructor(
                 loadAllData()
             } catch (e: Exception) {
                 _error.value = "Error deleting user: ${e.message}"
+            }
+        }
+    }
+
+    fun completeBreakdown(breakdownId: String, technicianId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val updatedBreakdown = supabaseRepository.updateBreakdownStatus(breakdownId, "completed")
+
+                _assignments.value.filter { it.breakdown_id == breakdownId }
+                    .forEach { assignment ->
+                        assignment.assignment_id?.let { id ->
+                            supabaseRepository.updateAssignmentStatus(id, "completed")
+                        }
+                    }
+
+                supabaseRepository.removeFromActiveWork(breakdownId, technicianId)
+
+                loadAllData()
+
+                notificationService.notifyBreakdownChange(
+                    breakdown = updatedBreakdown,
+                    operation = "updated",
+                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                )
+
+            } catch (e: Exception) {
+                _error.value = "Failed to complete breakdown: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }

@@ -12,8 +12,10 @@ import kotlinx.coroutines.withContext
 import java.util.Locale.filter
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
 import kotlin.time.Clock.System.now
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Singleton
 class SupabaseRepository @Inject constructor() {
@@ -103,6 +105,7 @@ class SupabaseRepository @Inject constructor() {
             throw Exception("Profile update failed: ${e.message}")
         }
     }
+
     // ========== EQUIPMENT ==========
     suspend fun getAllEquipment(): List<Equipment> = withContext(Dispatchers.IO) {
         try {
@@ -281,6 +284,7 @@ class SupabaseRepository @Inject constructor() {
                 }
                 .decodeSingle()
         } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error updating breakdown status", e)
             throw Exception("Error updating breakdown status: ${e.message}")
         }
     }
@@ -411,11 +415,12 @@ class SupabaseRepository @Inject constructor() {
                     }
                 }
                 .decodeSingle()
-                } catch (e: Exception) {
-                    throw Exception("Error updating assignment status: ${e.message}")
-
-                }
+        } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error updating assignment status", e)
+            throw Exception("Error updating assignment status: ${e.message}")
+        }
     }
+
     suspend fun deleteAssignment(assignmentId: String): Boolean = withContext(Dispatchers.IO) {
         try {
             client.from("assignments").delete {
@@ -695,16 +700,23 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun getUserIdsByRole(role: String): List<String> = withContext(Dispatchers.IO) {
         try {
-            client.from("user_profiles")
-                .select(columns = Columns.list("user_id")) {
-                    filter {
-                        eq("role", role)
-                    }
-                }
+            Log.d("SupabaseRepository", "Fetching user IDs with role: $role")
+
+            val allUsers = client.from("user_profiles")
+                .select()
                 .decodeList<UserProfile>()
-                .map { it.user_id }
+
+            Log.d("SupabaseRepository", "Total users found: ${allUsers.size}")
+            allUsers.forEach { user ->
+                Log.d("SupabaseRepository", "User: ${user.user_id}, Role: ${user.role}")
+            }
+
+            val filteredUsers = allUsers.filter { it.role.equals(role, ignoreCase = true) }
+            Log.d("SupabaseRepository", "Found ${filteredUsers.size} users with role $role")
+
+            return@withContext filteredUsers.map { it.user_id }
         } catch (e: Exception) {
-            Log.e("SupabaseRepository", "Error fetching user IDs by role: ${e.message}")
+            Log.e("SupabaseRepository", "Error fetching users by role", e)
             emptyList()
         }
     }
@@ -730,6 +742,66 @@ class SupabaseRepository @Inject constructor() {
             return@withContext result
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error fetching notifications for user $userId", e)
+            emptyList()
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    suspend fun markBreakdownAsActive(breakdownId: String, technicianId: String): Boolean {
+        return try {
+            client.from("technician_active_work")
+                .insert(
+                    TechnicianActiveWork(
+                        breakdown_id = breakdownId,
+                        technician_id = technicianId
+                    )
+                )
+            true
+        } catch (e: Exception) {
+            Log.e("Repository", "Error marking breakdown as active", e)
+            false
+        }
+    }
+
+    suspend fun getActivelyWorkedOnBreakdowns(technicianId: String): List<String> {
+        return try {
+            client.from("technician_active_work")
+                .select(columns = Columns.list("breakdown_id")) {
+                    filter { eq("technician_id", technicianId) }
+                }
+                .decodeList<Map<String, String>>()
+                .mapNotNull { it["breakdown_id"] }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun removeFromActiveWork(breakdownId: String, technicianId: String): Boolean {
+        return try {
+            client.from("technician_active_work")
+                .delete {
+                    filter {
+                        eq("breakdown_id", breakdownId)
+                        eq("technician_id", technicianId)
+                    }
+                }
+            true
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error removing from active work", e)
+            false
+        }
+    }
+
+    suspend fun getActiveBreakdowns(technicianId: String): List<String> {
+        return try {
+            client.from("technician_active_work")
+                .select {
+                    filter { eq("technician_id", technicianId) }
+                }
+                .decodeList<TechnicianActiveWork>()
+                .mapNotNull { it.breakdown_id }
+        } catch (e: Exception) {
+            Log.e("Repository", "Error fetching active breakdowns", e)
             emptyList()
         }
     }

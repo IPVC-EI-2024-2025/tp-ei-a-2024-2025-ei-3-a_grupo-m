@@ -138,6 +138,13 @@ data class Notification(
     val metadata: String? = null // JSON string for additional data
 )
 
+@Serializable
+data class TechnicianActiveWork(
+    val id: Long? = null,
+    val breakdown_id: String,
+    val technician_id: String,
+    val started_at: String? = null
+)
 
 fun Breakdown.toBreakdownItem(): BreakdownItem {
     return BreakdownItem(

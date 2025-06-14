@@ -32,17 +32,10 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Fetch breakdowns from Supabase
-                val allBreakdowns = supabaseRepository.getAllBreakdowns()
-
-                // Filter to show only active breakdowns (not completed)
-                _breakdowns.value = allBreakdowns.filter {
-                    it.status != "completed"
-                }
+                _breakdowns.value = supabaseRepository.getAllBreakdowns()
+                    .filter { it.status != "completed" }
             } catch (e: Exception) {
                 _error.value = "Failed to load breakdowns: ${e.message}"
-                // Log the error for debugging
-                println("Error loading breakdowns: ${e.message}")
             } finally {
                 _isLoading.value = false
             }

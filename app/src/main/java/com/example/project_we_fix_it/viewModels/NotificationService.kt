@@ -324,4 +324,46 @@ class NotificationService @Inject constructor(
             Log.e("NotificationService", "Failed to send message notification", e)
         }
     }
+
+    suspend fun notifyCompleteRequest(
+        breakdownId: String,
+        technicianId: String
+    ) {
+        try {
+            Log.d("NotificationService", "Starting complete request notification")
+
+            val breakdown = supabaseRepository.getBreakdownById(breakdownId)
+            val technician = supabaseRepository.getUserProfile(technicianId)
+
+            val equipmentName = breakdown?.equipment_id?.let { equipmentId ->
+                supabaseRepository.getEquipmentById(equipmentId)?.identifier ?: "Unknown Equipment"
+            } ?: "No Equipment"
+
+            val mainMessage = "Technician ${technician?.name ?: "Unknown"} requests to mark " +
+                    "breakdown ${equipmentName} as complete"
+
+            val metadata = mapOf(
+                "technician" to (technician?.name ?: "Unknown"),
+                "breakdown" to "${equipmentName}: ${breakdown?.description?.take(50) ?: "No description"}",
+                "type" to "complete_request"
+            )
+
+            val adminIds = supabaseRepository.getUserIdsByRole("admin")
+
+            adminIds.forEach { adminId ->
+                createNotification(
+                    userId = adminId,
+                    title = "Complete Request",
+                    message = mainMessage,
+                    relatedId = breakdownId,
+                    metadata = Json.encodeToString(metadata)
+                )
+            }
+
+            Log.d("NotificationService", "Notifications sent with formatted names")
+        } catch (e: Exception) {
+            Log.e("NotificationService", "Failed to send complete request", e)
+            throw e
+        }
+    }
 }

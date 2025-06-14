@@ -18,7 +18,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.project_we_fix_it.auth.AuthState
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.Routes
@@ -186,7 +185,11 @@ fun AppNavigation(
         composable(Routes.ASSIGNMENTS) {
             MyAssignmentsScreen(
                 commonActions = navigator.getCommonActions(showBackButton = true),
-                onBreakdownClick = navigator::navigateToBreakdownDetails
+                onBreakdownClick = { breakdownId ->
+                    navigator.navigateToBreakdownDetails(breakdownId)
+                },
+                authViewModel = hiltViewModel(),
+                assignmentViewModel = hiltViewModel()
             )
         }
         composable(Routes.MY_BREAKDOWNS) {

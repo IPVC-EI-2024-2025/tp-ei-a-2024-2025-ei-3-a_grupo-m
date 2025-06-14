@@ -25,7 +25,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.supabase.Notification
+import com.example.project_we_fix_it.viewModels.AssignmentViewModel
 import com.example.project_we_fix_it.viewModels.NotificationViewModel
+import com.example.project_we_fix_it.viewModels.admin.AdminViewModel
 import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.ZoneId
@@ -37,13 +39,16 @@ import java.time.format.DateTimeFormatter
 fun NotificationsScreen(
     commonActions: CommonScreenActions,
     authViewModel: AuthViewModel = hiltViewModel(),
-    notificationViewModel: NotificationViewModel = hiltViewModel()
+    notificationViewModel: NotificationViewModel = hiltViewModel(),
+    assignmentViewModel: AssignmentViewModel = hiltViewModel(),
+    adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()
     val notifications by notificationViewModel.notifications.collectAsState()
     val unreadCount by notificationViewModel.unreadCount.collectAsState()
     val userId = authState.user?.id
     val showDeleteDialog = remember { mutableStateOf(false) }
+    val showCompleteDialog = remember { mutableStateOf<Notification?>(null) }
 
     LaunchedEffect(userId) {
         Log.d("NotificationsScreen", "UserId changed: $userId")
@@ -89,6 +94,50 @@ fun NotificationsScreen(
             dismissButton = {
                 TextButton(
                     onClick = { showDeleteDialog.value = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    showCompleteDialog.value?.let { notification ->
+        AlertDialog(
+            onDismissRequest = { showCompleteDialog.value = null },
+            title = { Text("Mark breakdown as complete?") },
+            text = {
+                Column {
+                    Text(notification.message)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("This will permanently close the breakdown.",
+                        style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        notification.related_id?.let { breakdownId ->
+                            val metadata = try {
+                                Json.decodeFromString<Map<String, String>>(
+                                    notification.metadata ?: "{}"
+                                )
+                            } catch (e: Exception) {
+                                emptyMap()
+                            }
+
+                            val technicianId = metadata["technician_id"] ?: ""
+
+                            adminViewModel.completeBreakdown(breakdownId, technicianId)
+                        }
+                        showCompleteDialog.value = null
+                    }
+                ) {
+                    Text("Confirm Complete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showCompleteDialog.value = null }
                 ) {
                     Text("Cancel")
                 }
@@ -156,7 +205,16 @@ fun NotificationsScreen(
                         NotificationItem(
                             notification = notification,
                             onClick = {
-                                handleNotificationClick(notification, commonActions)
+                                when {
+                                    notification.title.contains("Breakdown", ignoreCase = true) -> {
+                                        notification.related_id?.let { id ->
+                                            commonActions.navigateToBreakdownDetails(id)
+                                        }
+                                    }
+                                    notification.title.contains("Complete Request", ignoreCase = true) -> {
+                                        showCompleteDialog.value = notification
+                                    }
+                                }
                             }
                         )
                     }
@@ -213,7 +271,6 @@ fun NotificationItem(
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            // Safely handle metadata display
             notification.metadata?.let { meta ->
                 val metadata = try {
                     Json.decodeFromString<Map<String, String>>(meta)
@@ -224,7 +281,6 @@ fun NotificationItem(
                 metadata?.let {
                     Spacer(modifier = Modifier.height(4.dp))
                     Column {
-                        // Display "by" field with name instead of ID
                         if (it.containsKey("by")) {
                             Text(
                                 text = "By: ${it["by"]}",
@@ -233,7 +289,6 @@ fun NotificationItem(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        // Display other metadata fields except 'by'
                         it.filter { (key, _) -> key != "by" }.forEach { (key, value) ->
                             Text(
                                 text = "$key: $value",
@@ -261,15 +316,3 @@ private fun formatSupabaseTimestamp(timestamp: String): String {
     }
 }
 
-private fun handleNotificationClick(
-    notification: Notification,
-    commonActions: CommonScreenActions
-) {
-    notification.related_id?.let { relatedId ->
-        when {
-            notification.title.contains("Breakdown", ignoreCase = true) -> {
-                commonActions.navigateToBreakdownDetails(relatedId)
-            }
-        }
-    }
-}
