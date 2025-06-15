@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -132,7 +133,6 @@ fun BreakdownDetailsScreen(
                     ) else it.toString()
                 } ?: "Unknown")
 
-                // Photos section
                 if (photos.isNotEmpty()) {
                     Text(
                         text = "Photos",

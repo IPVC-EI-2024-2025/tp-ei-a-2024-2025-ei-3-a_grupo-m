@@ -238,12 +238,23 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun createBreakdown(breakdown: Breakdown): Breakdown = withContext(Dispatchers.IO) {
         try {
-            require(breakdown.breakdown_id == null) { "Breakdown ID must be null for creation" }
+            Log.d("SupabaseRepo", "Creating breakdown: ${breakdown.description}")
 
-            client.from("breakdowns")
-                .insert(breakdown.copy(breakdown_id = null)) // Explicitly exclude ID
-                .decodeSingle()
+
+            val breakdownToInsert = breakdown.copy(breakdown_id = null)
+
+            Log.d("SupabaseRepo", "Inserting breakdown: $breakdownToInsert")
+
+            val result = client.from("breakdowns")
+                .insert(breakdownToInsert) {
+                    select(columns = Columns.list("*"))
+                }
+                .decodeSingle<Breakdown>()
+
+            Log.d("SupabaseRepo", "Breakdown created successfully: ${result.breakdown_id}")
+            return@withContext result
         } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error creating breakdown", e)
             throw Exception("Error creating breakdown: ${e.message}")
         }
     }
@@ -429,16 +440,22 @@ class SupabaseRepository @Inject constructor() {
         fileName: String
     ): BreakdownPhoto = withContext(Dispatchers.IO) {
         try {
-            val bucket = client.storage.from(SupabaseClient.BUCKET_NAME)
+            Log.d("SupabaseRepo", "Starting photo upload for breakdown $breakdownId")
 
+            val bucket = client.storage.from(SupabaseClient.BUCKET_NAME)
             val filePath = "$breakdownId/$fileName"
+
+            Log.d("SupabaseRepo", "Uploading to path: $filePath")
             bucket.upload(filePath, imageBytes) {
                 upsert = false
             }
+            Log.d("SupabaseRepo", "Upload completed")
 
+            Log.d("SupabaseRepo", "Generating signed URL")
             val downloadUrl = client.storage
                 .from(SupabaseClient.BUCKET_NAME)
                 .createSignedUrl(filePath, 7.days)
+            Log.d("SupabaseRepo", "Signed URL: $downloadUrl")
 
             val photo = BreakdownPhoto(
                 breakdown_id = breakdownId,
@@ -446,19 +463,16 @@ class SupabaseRepository @Inject constructor() {
                 uploaded_at = now().toString()
             )
 
-            client.from("breakdown_photos")
+            Log.d("SupabaseRepo", "Inserting photo record into breakdown_photos")
+            val result = client.from("breakdown_photos")
                 .insert(photo)
-                .decodeSingle()
+                .decodeSingle<BreakdownPhoto>()
+
+            Log.d("SupabaseRepo", "Photo record inserted: ${result.photo_id}")
+            return@withContext result
         } catch (e: Exception) {
-            Log.d("SupabaseRepository", "Error uploading photo", e)
-            if (e.message?.contains("Expected start of the array") == true) {
-                Log.d("SupabaseRepository", "Supabase returned array error, but updating local state anyway")
-            }else {
-                Log.d("SupabaseRepository", "Error uploading photo: ${e.message}")
-            }
+            Log.e("SupabaseRepo", "Error in uploadBreakdownPhoto", e)
             throw Exception("Error uploading photo: ${e.message}")
-        }finally {
-            Log.d("SupabaseRepository", "Photo upload completed")
         }
     }
 

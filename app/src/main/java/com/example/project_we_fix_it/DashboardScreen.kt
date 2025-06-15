@@ -1,19 +1,26 @@
 package com.example.project_we_fix_it
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,7 +29,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.composables.BreakdownCard
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.supabase.Breakdown
+import com.example.project_we_fix_it.supabase.Equipment
 import com.example.project_we_fix_it.viewModels.DashboardViewModel
+import java.io.ByteArrayOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,13 +40,12 @@ fun DashboardScreen(
     commonActions: CommonScreenActions,
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
-    val bottomSheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
     val breakdowns by viewModel.breakdowns.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Load breakdowns when screen is first displayed
+    var showCreateDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         viewModel.loadBreakdowns()
     }
@@ -60,11 +69,14 @@ fun DashboardScreen(
         onLogout = commonActions.logout,
         authViewModel = hiltViewModel()
     ) { padding ->
-        Box {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 72.dp)
             ) {
@@ -104,7 +116,7 @@ fun DashboardScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(breakdowns) { breakdown ->
                             Box(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -128,107 +140,252 @@ fun DashboardScreen(
                             }
                         }
                     }
+                }
+            }
 
+            FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Breakdown"
+                )
+            }
+        }
+    }
 
-                    // Bottom sheet handle
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .pointerInput(Unit) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consume()
-                                    if (dragAmount.y < -10) {
-                                        showBottomSheet = true
-                                    }
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(width = 32.dp, height = 4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(Color.Gray)
-                                .clickable { showBottomSheet = true }
-                        )
-                    }
+    if (showCreateDialog) {
+        SharedBreakdownCreateDialog(
+            equipment = viewModel.equipment.collectAsState().value,
+            onDismiss = { showCreateDialog = false },
+            onCreate = { breakdown, photos ->
+                viewModel.createBreakdown(breakdown, photos)
+                showCreateDialog = false
+            },
+            showError = viewModel.error.collectAsState().value?.let {
+                it.contains("Failed to create breakdown")
+            } ?: false,
+            viewModel = viewModel
+        )
+    }
+
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SharedBreakdownCreateDialog(
+    equipment: List<Equipment>,
+    onDismiss: () -> Unit,
+    onCreate: (Breakdown, List<ByteArray>?) -> Unit,
+    showError: Boolean = false,
+    viewModel: DashboardViewModel
+) {
+    var selectedEquipmentId by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var urgency by remember { mutableStateOf("low") }
+    var location by remember { mutableStateOf("") }
+    var showError by remember { mutableStateOf(false) }
+    var selectedPhotos by remember { mutableStateOf<List<ByteArray>?>(null) }
+
+    var equipmentExpanded by remember { mutableStateOf(false) }
+    var urgencyExpanded by remember { mutableStateOf(false) }
+
+    val urgencyLevels = listOf("low", "medium", "high")
+    val context = LocalContext.current
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
+                val imageBytes = outputStream.toByteArray()
+
+                selectedPhotos = (selectedPhotos ?: emptyList()) + listOf(imageBytes)
+            } catch (e: Exception) {
+                showError = true
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Report New Breakdown") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (showError) {
+                    Text(
+                        text = "Failed to create breakdown. Please try again.",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
 
-                if (showBottomSheet) {
-                    ModalBottomSheet(
-                        onDismissRequest = { showBottomSheet = false },
-                        sheetState = bottomSheetState,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.padding(top = 64.dp),
-                        dragHandle = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(width = 32.dp, height = 4.dp)
-                                        .clip(RoundedCornerShape(2.dp))
-                                        .background(Color.Gray)
+                if (equipment.isEmpty()) {
+                    Text("Loading equipment...", color = Color.Gray)
+                } else {
+                    ExposedDropdownMenuBox(
+                        expanded = equipmentExpanded,
+                        onExpandedChange = { equipmentExpanded = !equipmentExpanded }
+                    ) {
+                        OutlinedTextField(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            readOnly = true,
+                            value = selectedEquipmentId.let { id ->
+                                equipment.find { it.equipment_id == id }?.let {
+                                    "${it.identifier} (${it.type})"
+                                } ?: "Select Equipment"
+                            },
+                            onValueChange = {},
+                            label = { Text("Equipment*") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipmentExpanded)
+                            }
+                        )
+                        ExposedDropdownMenu(
+                            expanded = equipmentExpanded,
+                            onDismissRequest = { equipmentExpanded = false }
+                        ) {
+                            equipment.forEach { equipmentItem ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = equipmentItem.identifier,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = equipmentItem.type,
+                                                fontSize = 12.sp,
+                                                color = Color.Gray
+                                            )
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedEquipmentId = equipmentItem.equipment_id ?: ""
+                                        equipmentExpanded = false
+                                    }
                                 )
                             }
                         }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("Location") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = urgencyExpanded,
+                    onExpandedChange = { urgencyExpanded = !urgencyExpanded }
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        readOnly = true,
+                        value = urgency.replaceFirstChar { it.uppercase() },
+                        onValueChange = {},
+                        label = { Text("Urgency Level") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = urgencyExpanded)
+                        }
+                    )
+                    ExposedDropdownMenu(
+                        expanded = urgencyExpanded,
+                        onDismissRequest = { urgencyExpanded = false }
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 16.dp)
-                        ) {
-                            Button(
+                        urgencyLevels.forEach { level ->
+                            DropdownMenuItem(
+                                text = { Text(level.replaceFirstChar { it.uppercase() }) },
                                 onClick = {
-                                    commonActions.navigateToBreakdownReporting()
-                                    showBottomSheet = false
-                                },
+                                    urgency = level
+                                    urgencyExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Add Photos (Optional)", fontWeight = FontWeight.Medium)
+
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.PhotoCamera, contentDescription = "Add Photo")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Select Photo")
+                }
+
+                selectedPhotos?.let { photos ->
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(photos) { photoBytes ->
+                            Image(
+                                bitmap = BitmapFactory.decodeByteArray(photoBytes, 0, photoBytes.size)
+                                    .asImageBitmap(),
+                                contentDescription = "Selected photo",
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.report_breakdown),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            Button(
-                                onClick = {
-                                    commonActions.navigateToAssignments()
-                                    showBottomSheet = false
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.view_assignments),
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 16.sp
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(24.dp))
+                                    .size(64.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
                         }
                     }
                 }
             }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (selectedEquipmentId.isNotBlank() && description.isNotBlank()) {
+                        val newBreakdown = Breakdown(
+                            equipment_id = selectedEquipmentId,
+                            urgency_level = urgency,
+                            location = location.ifEmpty { null },
+                            description = description,
+                            status = "open"
+                        )
+                        onCreate(newBreakdown, selectedPhotos)
+                        showError = false
+                    } else {
+                        showError = true
+                    }
+                },
+                enabled = selectedEquipmentId.isNotBlank() && description.isNotBlank()
+            ) {
+                Text("Report")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
-    }
- }
+    )
+}
