@@ -48,8 +48,8 @@ fun WeFixItAppScaffold(
     onNavigateToAdminAssignments: () -> Unit,
     onNavigateToBreakdownReporting: () -> Unit,
     onNavigateToMessages: () -> Unit,
-    showBackButton: Boolean = false,
-    onBackClick: () -> Unit = {},
+    showBackButton: Boolean = currentRoute != "home", // Modified to show back button on all screens except home
+    onBackClick: () -> Unit = { navController.popBackStack() },
     actions: @Composable RowScope.() -> Unit = {},
     onLogout: () -> Unit,
     authViewModel: AuthViewModel = hiltViewModel(),
@@ -91,7 +91,7 @@ fun WeFixItAppScaffold(
                 TextButton(
                     onClick = { showLogoutDialog = false }
                 ) {
-                    Frame.Text("Cancel")
+                    Text("Cancel")
                 }
             }
         )
@@ -140,7 +140,6 @@ fun WeFixItAppScaffold(
                         onNavigateToAdminUsers()
                     },
                     onAdminEquipmentClick = {
-                        Log.d("AppScaffold", "Admin Equipment navigation triggered")
                         scope.launch { drawerState.close() }
                         onNavigateToAdminEquipment()
                     },
@@ -166,17 +165,16 @@ fun WeFixItAppScaffold(
                     title = title,
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onSettingsClick = onOpenSettings,
-                    showLogout = true,
+                    showLogout = false, // Removed logout from top bar
                     showBackButton = showBackButton,
                     onBackClick = onBackClick,
-                    onLogoutClick = { showLogoutDialog = true },
                     actions = actions
                 )
             },
             bottomBar = {
                 WeFixItBottomBar(
                     currentRoute = currentRoute,
-                    onProfileClick = onNavigateToProfile,
+                    onMenuClick = { scope.launch { drawerState.open() } },
                     onHomeClick = onNavigateToHome,
                     onNotificationsClick = onNavigateToNotifications,
                     unreadCount = unreadCount

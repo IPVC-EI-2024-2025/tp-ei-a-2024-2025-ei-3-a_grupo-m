@@ -50,13 +50,7 @@ fun WorkingOnBreakdownItem(
         breakdown = breakdown,
         onClick = { onBreakdownClick(breakdown.id) },
         trailingContent = {
-            Checkbox(
-                checked = true,
-                onCheckedChange = null,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary
-                )
-            )
+
         }
     )
 }
@@ -106,8 +100,6 @@ fun AssignedBreakdownItem(
                         color = Color.Gray
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                PriorityIndicator(priority = breakdown.priority)
             }
         }
     )

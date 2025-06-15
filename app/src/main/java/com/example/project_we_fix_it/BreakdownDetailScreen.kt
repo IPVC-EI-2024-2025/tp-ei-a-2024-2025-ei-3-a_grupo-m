@@ -43,6 +43,7 @@ fun BreakdownDetailsScreen(
     val isLoading by breakdownViewModel.isLoading.collectAsState()
     val createdChatId by chatViewModel.createdChatId.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+    val authState by authViewModel.authState.collectAsState()
 
     if (showDialog) {
         AlertDialog(
@@ -170,47 +171,55 @@ fun BreakdownDetailsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            breakdown?.breakdown_id?.let { id ->
-                                breakdownViewModel.updateBreakdownUrgencyLevel(id, "critical")
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red,
-                            contentColor = Color.White
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("Mark as Critical")
-                    }
-                    Button(
-                        onClick = {
-                            breakdown?.let { bd ->
-                                val currentUserId = authViewModel.currentUserId
-                                if (currentUserId != null) {
-                                    val hasAssignedTechnician = bd.assignments.any { it.technician_id != null }
+                        if (authState.userProfile?.role == "admin") {
+                            Button(
+                                onClick = {
+                                    breakdown?.breakdown_id?.let { id ->
+                                        breakdownViewModel.updateBreakdownUrgencyLevel(id, "critical")
+                                    }
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.Red,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Mark as Critical")
+                            }
+                        }
 
-                                    if (hasAssignedTechnician) {
-                                        val participants = mutableListOf<String>().apply {
-                                            add(currentUserId)
-                                            bd.reporter_id?.let { add(it) }
-                                            bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
-                                        }.distinct()
+                        Button(
+                            onClick = {
+                                breakdown?.let { bd ->
+                                    val currentUserId = authViewModel.currentUserId
+                                    if (currentUserId != null) {
+                                        val hasAssignedTechnician = bd.assignments.any { it.technician_id != null }
 
-                                        chatViewModel.createOrGetChat(
-                                            breakdownId = bd.breakdown_id,
-                                            participants = participants
-                                        )
-                                    } else {
-                                        showDialog = true
+                                        if (hasAssignedTechnician) {
+                                            val participants = mutableListOf<String>().apply {
+                                                add(currentUserId)
+                                                bd.reporter_id?.let { add(it) }
+                                                bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
+                                            }.distinct()
+
+                                            chatViewModel.createOrGetChat(
+                                                breakdownId = bd.breakdown_id,
+                                                participants = participants
+                                            )
+                                        } else {
+                                            showDialog = true
+                                        }
                                     }
                                 }
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Chat About This Breakdown")
+                            },
+                            modifier = if (authState.userProfile?.role == "admin") Modifier.weight(1f) else Modifier.fillMaxWidth()
+                        ) {
+                            Text("Chat About This Breakdown")
+                        }
                     }
                     LaunchedEffect(createdChatId) {
                         createdChatId?.let { chatId ->

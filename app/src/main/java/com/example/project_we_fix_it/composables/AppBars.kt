@@ -3,6 +3,11 @@ package com.example.project_we_fix_it.composables
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -18,7 +23,7 @@ import com.example.project_we_fix_it.R
 @Composable
 fun WeFixItTopAppBar(
     title: String,
-    onMenuClick: () -> Unit,
+    onMenuClick: () -> Unit = {},
     onSettingsClick: () -> Unit,
     showLogout: Boolean = false,
     onLogoutClick: () -> Unit = {},
@@ -38,34 +43,17 @@ fun WeFixItTopAppBar(
             if (showBackButton) {
                 IconButton(onClick = onBackClick) {
                     Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_menu_revert),
+                        imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back"
-                    )
-                }
-            } else {
-                IconButton(onClick = onMenuClick) {
-                    Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
-                        contentDescription = "Menu"
                     )
                 }
             }
         },
         actions = {
             actions()
-
-            if (showLogout) {
-                IconButton(onClick = onLogoutClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Logout",
-                        tint = Color.Red
-                    )
-                }
-            }
             IconButton(onClick = onSettingsClick) {
                 Icon(
-                    painter = painterResource(id = AndroidR.drawable.ic_menu_preferences),
+                    imageVector = Icons.Default.Settings,
                     contentDescription = "Settings"
                 )
             }
@@ -79,7 +67,7 @@ fun WeFixItTopAppBar(
 @Composable
 fun WeFixItBottomBar(
     currentRoute: String,
-    onProfileClick: () -> Unit,
+    onMenuClick: () -> Unit,
     onHomeClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     unreadCount: Int = 0
@@ -96,22 +84,22 @@ fun WeFixItBottomBar(
             NavigationBarItem(
                 icon = {
                     Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_menu_myplaces),
-                        contentDescription = "Profile"
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Menu"
                     )
                 },
-                label = { Text(stringResource(R.string.profile)) },
-                selected = currentRoute == "profile",
-                onClick = onProfileClick
+                label = { Text("Menu") },
+                selected = false,
+                onClick = onMenuClick
             )
             NavigationBarItem(
                 icon = {
                     Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_menu_agenda),
+                        imageVector = Icons.Default.Home,
                         contentDescription = "Home"
                     )
                 },
-                label = { Text(stringResource(R.string.home)) },
+                label = { Text("Home") },
                 selected = currentRoute == "home",
                 onClick = onHomeClick
             )
@@ -127,12 +115,12 @@ fun WeFixItBottomBar(
                         }
                     ) {
                         Icon(
-                            painter = painterResource(id = AndroidR.drawable.ic_popup_reminder),
+                            imageVector = Icons.Default.Notifications,
                             contentDescription = "Notifications"
                         )
                     }
                 },
-                label = { Text(stringResource(R.string.notifications)) },
+                label = { Text("Notifications") },
                 selected = currentRoute == "notifications",
                 onClick = onNotificationsClick
             )
