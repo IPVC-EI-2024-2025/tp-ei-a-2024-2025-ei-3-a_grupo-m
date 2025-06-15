@@ -41,7 +41,6 @@ fun SettingsScreen(
         )
     }
 
-    // Função para mudar o idioma
     fun changeLanguage(language: String) {
         val locale = when (language) {
             "Português" -> Locale("pt")
@@ -60,7 +59,7 @@ fun SettingsScreen(
     }
 
     WeFixItAppScaffold(
-        title = "Settings",
+        title = stringResource(R.string.settings),
         currentRoute = "settings",
         navController = commonActions.navController,
         onNavigateToProfile = commonActions.navigateToProfile,
@@ -140,8 +139,8 @@ fun SettingsScreen(
                 )
 
                 SettingsItem(
-                    title = "Notifications",
-                    description = "Notifications preferences",
+                    title = stringResource(R.string.notifications),
+                    description = stringResource(R.string.notification_preferences),
                     showArrow = true,
                     onClick = { commonActions.navigateToNotifications() }
                 )
@@ -152,8 +151,8 @@ fun SettingsScreen(
                 )
 
                 SettingsItem(
-                    title = "Account Settings",
-                    description = "Manage your account settings",
+                    title = stringResource(R.string.account_settings),
+                    description = stringResource(R.string.manage_account),
                     showArrow = true,
                     onClick = { commonActions.navigateToProfile() }
                 )
@@ -172,12 +171,12 @@ fun SettingsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Dark Theme",
+                            text = stringResource(R.string.dark_mode),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Change to dark theme",
+                            text = stringResource(R.string.enable_dark_mode),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -217,7 +216,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
-                        text = "About",
+                        text = stringResource(R.string.about),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )

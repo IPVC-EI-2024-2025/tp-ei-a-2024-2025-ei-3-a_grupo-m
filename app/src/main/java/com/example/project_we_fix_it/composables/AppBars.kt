@@ -7,10 +7,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.R as AndroidR
+import com.example.project_we_fix_it.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,7 +100,7 @@ fun WeFixItBottomBar(
                         contentDescription = "Profile"
                     )
                 },
-                label = { Text("Profile") },
+                label = { Text(stringResource(R.string.profile)) },
                 selected = currentRoute == "profile",
                 onClick = onProfileClick
             )
@@ -109,7 +111,7 @@ fun WeFixItBottomBar(
                         contentDescription = "Home"
                     )
                 },
-                label = { Text("Home") },
+                label = { Text(stringResource(R.string.home)) },
                 selected = currentRoute == "home",
                 onClick = onHomeClick
             )
@@ -130,7 +132,7 @@ fun WeFixItBottomBar(
                         )
                     }
                 },
-                label = { Text("Notifications") },
+                label = { Text(stringResource(R.string.notifications)) },
                 selected = currentRoute == "notifications",
                 onClick = onNotificationsClick
             )

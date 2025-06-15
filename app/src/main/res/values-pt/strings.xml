@@ -50,4 +50,115 @@
     <string name="choose_language">Escolha o seu idioma</string>
     <string name="english">Inglês</string>
     <string name="portuguese">Português</string>
+
+    <!-- Common Ui Elements-->
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Eliminar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="back">Voltar</string>
+    <string name="next">Próximo</string>
+    <string name="submit">Submeter</string>
+    <string name="search">Pesquisar</string>
+    <string name="loading">A carregar…</string>
+    <string name="error">Erro</string>
+    <string name="success">Sucesso</string>
+    <string name="warning">Aviso</string>
+
+
+    <string name="dark_mode">Modo Escuro</string>
+    <string name="enable_dark_mode">Ativar modo escuro</string>
+    <string name="notifications">Notificações</string>
+    <string name="notification_preferences">Preferências de notificações</string>
+    <string name="account_settings">Definições da Conta</string>
+    <string name="manage_account">Gerir a sua conta</string>
+    <string name="about">Sobre</string>
+    <string name="app_version">Versão da Aplicação</string>
+    <string name="settings">Definições</string>
+
+
+    <string name="user_profile">Perfil do Utilizador</string>
+    <string name="name">Nome</string>
+    <string name="email">Email</string>
+    <string name="role">Função</string>
+    <string name="status">Estado</string>
+    <string name="phone">Telefone</string>
+    <string name="edit_profile">Editar Perfil</string>
+    <string name="change_password">Alterar Palavra-passe</string>
+
+
+    <string name="breakdown_details">Detalhes da Avaria</string>
+    <string name="assigned_to">Atribuído a</string>
+    <string name="equipment_identification">Identificação do Equipamento</string>
+    <string name="description">Descrição</string>
+    <string name="date">Data</string>
+    <string name="urgency">Urgência</string>
+    <string name="photos">Fotos</string>
+    <string name="mark_as_critical">Marcar como Crítico</string>
+    <string name="chat_about_breakdown">Conversar sobre esta avaria</string>
+    <string name="not_assigned">Não é possível conversar</string>
+    <string name="not_assigned2">Um técnico precisa de estar atríbuido para poder conversar</string>
+
+
+    <string name="chat">Conversa</string>
+    <string name="type_your_message">Escreva a sua mensagem</string>
+    <string name="send">Enviar</string>
+    <string name="no_messages">Ainda sem mensagens</string>
+
+
+    <string name="admin_dashboard">Painel de Administração</string>
+    <string name="admin_users">Administrar Utilizadores</string>
+    <string name="admin_equipment">Administrar Equipamentos</string>
+    <string name="admin_breakdowns">Administrar Avarias</string>
+    <string name="admin_assignments">Administrar Atribuições</string>
+    <string name="create_new">Criar Novo</string>
+    <string name="view_all">Ver Todos</string>
+
+
+    <string name="error_loading_data">Erro ao carregar dados</string>
+    <string name="error_saving_data">Erro ao guardar dados</string>
+    <string name="error_deleting_data">Erro ao eliminar dados</string>
+    <string name="network_error">Erro de rede. Por favor, verifique a sua ligação.</string>
+    <string name="try_again">Tentar novamente</string>
+
+
+    <string name="logout">Terminar Sessão</string>
+    <string name="logout_confirm">Tem a certeza que deseja terminar sessão?</string>
+
+
+    <string name="yes">Sim</string>
+    <string name="menu">Menu</string>
+    <string name="profile">Perfil</string>
+    <string name="home">Home</string>
+
+
+    <string name="my_breakdowns">Minhas Avarias</string>
+    <string name="my_assignments">Minhas Tarefas</string>
+    <string name="messages">Mensagens</string>
+    <string name="admin">Administrador</string>
+    <string name="profile_updated">Perfil Atualizado</string>
+    <string name="profile_successfully_updated">O seu perfil foi atualizado com sucesso.</string>
+    <string name="working_on">Em Trabalho</string>
+    <string name="assigned_breakdowns">Avarias Atribuídas</string>
+    <string name="list_of_my_breakdowns">Lista das minhas avarias (%d)</string>
+    <string name="no_breakdowns_reported">Nenhuma avaria reportada por si</string>
+    <string name="pending">Pendente</string>
+    <string name="email_sent">Email Enviado!</string>
+    <string name="reset_link_sent">Enviamos um link de redefinição de senha para:</string>
+    <string name="check_email">Por favor verifique o seu email e clique no link para redefinir a sua senha. Não se esqueça de verificar a pasta de spam!</string>
+    <string name="resend_email">Reenviar Email</string>
+    <string name="back_to_login">Voltar ao Login</string>
+    <string name="start_working">Começar a trabalhar nesta avaria?</string>
+    <string name="move_to_working">Isto irá mover a avaria para a sua lista \'Em Trabalho\'.</string>
+    <string name="start_working_button">Começar a Trabalhar</string>
+    <string name="request_complete">Pedir para marcar como concluído?</string>
+    <string name="request_complete_message">Isto enviará um pedido ao administrador para marcar esta avaria como concluída.</string>
+    <string name="request_completion">Pedir Conclusão</string>
+
+
+    <!-- test -->
+    <string name="complete_request_message">O técnico %1$s pede para marcar a avaria %2$s como concluída</string>
+    <string name="unknown_technician">Desconhecido</string>
+    <string name="unknown_equipment">Equipamento Desconhecido</string>
 </resources>

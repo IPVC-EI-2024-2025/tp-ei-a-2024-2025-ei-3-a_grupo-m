@@ -14,6 +14,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,8 +47,8 @@ fun BreakdownDetailsScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Cannot Start Chat") },
-            text = { Text("Someone needs to be assigned to talk in this chat") },
+            title = { Text(stringResource(R.string.not_assigned)) },
+            text = { Text(stringResource(R.string.not_assigned2)) },
             confirmButton = {
                 Button(onClick = { showDialog = false }) {
                     Text("OK")
@@ -58,7 +59,7 @@ fun BreakdownDetailsScreen(
 
 
     WeFixItAppScaffold(
-        title = "Breakdown Details",
+        title = stringResource(R.string.breakdown_details),
         currentRoute = "breakdown_details",
         navController = commonActions.navController,
         onNavigateToProfile = commonActions.navigateToProfile,
@@ -103,7 +104,7 @@ fun BreakdownDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Breakdown Information",
+                    text = stringResource(R.string.breakdown_info),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -116,30 +117,28 @@ fun BreakdownDetailsScreen(
                     }
                 }
 
-                DetailRow("Assigned to", assignedTechnician ?: "Not assigned")
-                DetailRow("Equipment Identification", breakdown?.equipment?.identifier ?: "Unknown equipment")
-                DetailRow("Description", breakdown?.description ?: "No description")
-                DetailRow("Date", breakdown?.reported_at ?: "Unknown date")
-                DetailRow("Location", breakdown?.location ?: "Unknown location")
-                DetailRow("Status", breakdown?.status?.replace("_", " ")?.replaceFirstChar {
+                DetailRow(stringResource(R.string.assigned_to), assignedTechnician ?: "Not assigned")
+                DetailRow(stringResource(R.string.equipment), breakdown?.equipment?.identifier ?: "Unknown equipment")
+                DetailRow(stringResource(R.string.description), breakdown?.description ?: "No description")
+                DetailRow(stringResource(R.string.date), breakdown?.reported_at ?: "Unknown date")
+                DetailRow(stringResource(R.string.location), breakdown?.location ?: "Unknown location")
+                DetailRow(stringResource(R.string.status), breakdown?.status?.replace("_", " ")?.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase(
                         Locale.ROOT
                     ) else it.toString()
                 } ?: "Unknown status")
-                DetailRow("Urgency", breakdown?.urgency_level?.replaceFirstChar {
+                DetailRow(stringResource(R.string.urgency), breakdown?.urgency_level?.replaceFirstChar {
                     if (it.isLowerCase()) it.titlecase(
                         Locale.ROOT
                     ) else it.toString()
                 }
                     ?: "Unknown")
 
-                // Photos section if available
                 if (!breakdown?.photos.isNullOrEmpty()) {
                     Text(
-                        text = "Photos",
+                        text = stringResource(R.string.photos),
                         style = MaterialTheme.typography.headlineSmall
                     )
-                    // Here you would display the photos - implement this based on your image loading solution
                     Text("${breakdown?.photos?.size} photos available")
                 }
 
@@ -161,7 +160,7 @@ fun BreakdownDetailsScreen(
                             contentColor = Color.White
                         )
                     ) {
-                        Text("Mark as Critical")
+                        Text(stringResource(R.string.mark_as_critical))
                     }
                     Button(
                         onClick = {
@@ -189,7 +188,7 @@ fun BreakdownDetailsScreen(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Chat About This Breakdown")
+                        Text(stringResource(R.string.chat_about_breakdown))
                     }
                     LaunchedEffect(createdChatId) {
                         createdChatId?.let { chatId ->
@@ -199,7 +198,6 @@ fun BreakdownDetailsScreen(
                     LaunchedEffect(createdChatId) {
                         createdChatId?.let { chatId ->
                             commonActions.navigateToChat(chatId)
-                            // Clear the ID after navigation
                             chatViewModel._createdChatId.value = null
                         }
                     }

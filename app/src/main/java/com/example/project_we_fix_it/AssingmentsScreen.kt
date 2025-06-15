@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -94,13 +95,13 @@ fun AssignedBreakdownItem(
             Column(horizontalAlignment = Alignment.End) {
                 if (isWorkingOn) {
                     Text(
-                        text = "Working On",
+                        text = stringResource(R.string.working_on),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
                     Text(
-                        text = "Pending",
+                        text = stringResource(R.string.pending),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Gray
                     )
@@ -169,8 +170,8 @@ fun MyAssignmentsScreen(
     showStartWorkingDialog?.let { breakdownId ->
         AlertDialog(
             onDismissRequest = { showStartWorkingDialog = null },
-            title = { Text("Start working on this breakdown?") },
-            text = { Text("This will move the breakdown to your 'Working On' list.") },
+            title = { Text(stringResource(R.string.start_working)) },
+            text = { Text(stringResource(R.string.move_to_working)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -180,7 +181,7 @@ fun MyAssignmentsScreen(
                         showStartWorkingDialog = null
                     }
                 ) {
-                    Text("Start Working")
+                    Text(stringResource(R.string.start_working_button))
                 }
             },
             dismissButton = {
@@ -196,8 +197,8 @@ fun MyAssignmentsScreen(
     showCompleteRequestDialog?.let { breakdownId ->
         AlertDialog(
             onDismissRequest = { showCompleteRequestDialog = null },
-            title = { Text("Request to mark as complete?") },
-            text = { Text("This will send a request to the admin to mark this breakdown as complete.") },
+            title = { Text(stringResource(R.string.request_complete)) },
+            text = { Text(stringResource(R.string.request_complete_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -207,14 +208,14 @@ fun MyAssignmentsScreen(
                         showCompleteRequestDialog = null
                     }
                 ) {
-                    Text("Request Completion")
+                    Text(stringResource(R.string.request_completion))
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showCompleteRequestDialog = null }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -279,7 +280,7 @@ fun MyAssignmentsScreen(
 
 
     WeFixItAppScaffold(
-        title = "Assignments",
+        title = stringResource(R.string.assignments),
         currentRoute = "assignments",
         navController = commonActions.navController,
         onNavigateToProfile = commonActions.navigateToProfile,
