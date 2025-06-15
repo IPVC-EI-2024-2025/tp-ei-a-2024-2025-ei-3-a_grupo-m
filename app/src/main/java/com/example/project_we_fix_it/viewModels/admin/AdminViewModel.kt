@@ -73,50 +73,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    fun createUser(user: UserProfile) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                supabaseRepository.updateUserProfile(user)
-                notificationService.notifyUserProfileChange(
-                    userProfile = user,
-                    operation = "created",
-                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
-                )
-                loadAllData()
-            } catch (e: Exception) {
-                _error.value = "Failed to create user: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-
-    fun updateUser(user: UserProfile) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val updatedProfile = supabaseRepository.updateUserProfile(user)
-                _users.value = _users.value.map {
-                    if (it.user_id == user.user_id) updatedProfile else it
-                }
-
-                _error.value = "Profile updated successfully. " +
-                        if (user.email != null) "Email change confirmation sent." else ""
-
-            } catch (e: Exception) {
-                _error.value = when {
-                    e.message?.contains("Email update") == true ->
-                        "Profile updated but email change failed: ${e.message}"
-                    else -> "Update failed: ${e.message}"
-                }
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
     //Equipment
 
     fun createEquipment(equipment: Equipment) {
@@ -240,16 +196,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    fun deleteBreakdown(breakdownId: String) {
-        viewModelScope.launch {
-            try {
-                supabaseRepository.deleteBreakdown(breakdownId)
-                loadAllData()
-            } catch (e: Exception) {
-                throw Exception("Error deleting breakdown: ${e.message}")
-            }
-        }
-    }
 
     fun uploadBreakdownPhoto(breakdownId: String, imageBytes: ByteArray, fileName: String) {
         viewModelScope.launch {
@@ -267,9 +213,6 @@ class AdminViewModel @Inject constructor(
         }
     }
 
-    fun getBreakdownPhotos(breakdownId: String): List<BreakdownPhoto> {
-        return _breakdownPhotos.value[breakdownId] ?: emptyList()
-    }
 
     fun createAssignment(assignment: Assignment) {
         viewModelScope.launch {

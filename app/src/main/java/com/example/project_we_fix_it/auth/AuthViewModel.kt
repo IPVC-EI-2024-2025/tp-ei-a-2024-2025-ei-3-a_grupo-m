@@ -223,13 +223,4 @@ class AuthViewModel @Inject constructor(
         _authState.value = _authState.value.copy(error = null)
     }
 
-    fun isTechnician(): Boolean {
-        return authState.value.userProfile?.role?.equals("technician", ignoreCase = true) ?: false
-    }
-
-    fun isAdmin(): Boolean {
-        return authState.value.userProfile?.role?.equals("admin", ignoreCase = true) ?: false
-    }
-
-
 }

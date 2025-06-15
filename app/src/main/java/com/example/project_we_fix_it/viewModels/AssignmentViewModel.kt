@@ -168,46 +168,4 @@ class AssignmentViewModel @Inject constructor(
         }
     }
 
-    fun completeBreakdown(breakdownId: String, technicianId: String) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-
-                val updatedBreakdown = supabaseRepository.updateBreakdownStatus(breakdownId, "closed")
-
-                val assignment = _assignments.value.find { it.breakdown_id == breakdownId }
-                assignment?.assignment_id?.let { assignmentId ->
-                    supabaseRepository.updateAssignmentStatus(assignmentId, "completed")
-                }
-
-                supabaseRepository.removeFromActiveWork(breakdownId, technicianId)
-                Log.d("AssignmentViewModel", "BreakdownCompleted")
-                loadAssignments(technicianId)
-
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to complete breakdown: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun stopWorkingOnBreakdown(breakdownId: String, technicianId: String) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val success = supabaseRepository.removeFromActiveWork(breakdownId, technicianId)
-
-                if (success) {
-                    loadAssignments(technicianId)
-                } else {
-                    _errorMessage.value = "Failed to update active work status"
-                }
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to stop working: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
 }

@@ -85,11 +85,9 @@ class BreakdownReportingViewModel @Inject constructor(
                     estimated_completion = null
                 )
 
-                // Create the breakdown first
                 val createdBreakdown = supabaseRepository.createBreakdown(breakdown)
                 val breakdownId = createdBreakdown.breakdown_id ?: throw Exception("Failed to get breakdown ID")
 
-                // Upload photos if any
                 _photosToUpload.value.forEachIndexed { index, imageBytes ->
                     supabaseRepository.uploadBreakdownPhoto(
                         breakdownId = breakdownId,
@@ -127,9 +125,4 @@ class BreakdownReportingViewModel @Inject constructor(
             .format(Date())
     }
 
-    fun clearState() {
-        _errorMessage.value = null
-        _isSuccess.value = false
-        _photosToUpload.value = emptyList()
-    }
 }

@@ -42,7 +42,4 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    fun refreshBreakdowns() {
-        loadBreakdowns()
-    }
 }

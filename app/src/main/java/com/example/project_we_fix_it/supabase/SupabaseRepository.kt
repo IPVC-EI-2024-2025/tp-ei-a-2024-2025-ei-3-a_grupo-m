@@ -235,33 +235,6 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
-    suspend fun getBreakdownsByStatus(status: String): List<Breakdown> = withContext(Dispatchers.IO) {
-        try {
-            client.from("breakdowns")
-                .select {
-                    filter {
-                        eq("status", status)
-                    }
-                }
-                .decodeList()
-        } catch (e: Exception) {
-            throw Exception("Error fetching breakdowns by status: ${e.message}")
-        }
-    }
-
-    suspend fun getBreakdownsByUrgency(urgency: String): List<Breakdown> = withContext(Dispatchers.IO) {
-        try {
-            client.from("breakdowns")
-                .select {
-                    filter {
-                        eq("urgency_level", urgency)
-                    }
-                }
-                .decodeList()
-        } catch (e: Exception) {
-            throw Exception("Error fetching breakdowns by urgency: ${e.message}")
-        }
-    }
 
     suspend fun createBreakdown(breakdown: Breakdown): Breakdown = withContext(Dispatchers.IO) {
         try {
@@ -588,21 +561,6 @@ class SupabaseRepository @Inject constructor() {
     }
 
 
-    // ========== TECHNICIAN METRICS ==========
-    suspend fun getTechnicianMetrics(technicianId: String): TechnicianMetrics? = withContext(Dispatchers.IO) {
-        try {
-            client.from("technician_metrics")
-                .select {
-                    filter {
-                        eq("technician_id", technicianId)
-                    }
-                }
-                .decodeSingleOrNull()
-        } catch (e: Exception) {
-            throw Exception("Error fetching technician metrics: ${e.message}")
-        }
-    }
-
     // ========== CHATS ==========
     suspend fun createChat(breakdownId: String?, participants: List<String>): Chat = withContext(Dispatchers.IO) {
         try {
@@ -653,19 +611,6 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
-
-   suspend fun getAllChats(): List<Chat> = withContext(Dispatchers.IO) {
-        try {
-            Log.d("SupabaseRepository", "Fetching all chats")
-            client.from("chats")
-                .select()
-                .decodeList()
-        } catch (e: Exception) {
-            Log.d("SupabaseRepository", "Error fetching all chats: ${e.message}")
-            throw Exception("Error fetching chats: ${e.message}")
-        }
-    }
-
    suspend fun getMessagesByChat(chatId: String): List<Message> = withContext(Dispatchers.IO) {
         try {
             client.from("messages")
@@ -701,22 +646,6 @@ class SupabaseRepository @Inject constructor() {
         } catch (e: Exception) {
             Log.e("SupabaseRepo", "Error creating notification", e)
             throw Exception("Error creating notification: ${e.message}")
-        }
-    }
-
-    suspend fun getUnreadNotifications(userId: String): List<Notification> = withContext(Dispatchers.IO) {
-        try {
-            client.from("notifications")
-                .select {
-                    filter {
-                        eq("user_id", userId)
-                        eq("read", false)
-                    }
-                    order("created_at", Order.DESCENDING)
-                }
-                .decodeList()
-        } catch (e: Exception) {
-            throw Exception("Error fetching notifications: ${e.message}")
         }
     }
 
@@ -813,19 +742,6 @@ class SupabaseRepository @Inject constructor() {
         } catch (e: Exception) {
             Log.e("Repository", "Error marking breakdown as active", e)
             false
-        }
-    }
-
-    suspend fun getActivelyWorkedOnBreakdowns(technicianId: String): List<String> {
-        return try {
-            client.from("technician_active_work")
-                .select(columns = Columns.list("breakdown_id")) {
-                    filter { eq("technician_id", technicianId) }
-                }
-                .decodeList<Map<String, String>>()
-                .mapNotNull { it["breakdown_id"] }
-        } catch (e: Exception) {
-            emptyList()
         }
     }
 

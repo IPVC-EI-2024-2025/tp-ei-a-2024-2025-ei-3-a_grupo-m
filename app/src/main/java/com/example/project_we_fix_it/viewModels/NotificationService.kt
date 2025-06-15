@@ -318,62 +318,6 @@ class NotificationService @Inject constructor(
         )
     }
 
-    suspend fun notifyChatChange(
-        chat: Chat,
-        operation: String,
-        currentUserId: String
-    ) {
-        val affectedUserIds = chat.participants
-            .filter { it != currentUserId }
-            .distinct()
-
-        notifyCrudOperation(
-            entityType = "chat",
-            operation = operation,
-            entityId = chat.chat_id,
-            entityName = chat.breakdown_id?.let {
-                "Chat for breakdown $it"
-            } ?: "Group chat",
-            currentUserId = currentUserId,
-            affectedUserIds = affectedUserIds,
-            additionalMetadata = mapOf(
-                "breakdown_id" to (chat.breakdown_id ?: ""),
-                "participants" to chat.participants.joinToString(",")
-            )
-        )
-    }
-
-    suspend fun notifyNewMessage(
-        message: Message,
-        currentUserId: String
-    ) {
-        try {
-            val chat = message.chat_id?.let {
-                supabaseRepository.getChatByBreakdownId(it)
-            } ?: return
-
-            val affectedUserIds = chat.participants
-                .filter { it != message.sender_id }
-                .distinct()
-
-            affectedUserIds.forEach { userId ->
-                createNotification(
-                    userId = userId,
-                    title = "New message",
-                    message = message.content.take(50).let {
-                        if (it.length == 50) "$it..." else it
-                    },
-                    relatedId = message.chat_id ?: message.breakdown_id,
-                    metadata = Json.encodeToString(mapOf(
-                        "sender_id" to (message.sender_id ?: ""),
-                        "breakdown_id" to (message.breakdown_id ?: "")
-                    ))
-                )
-            }
-        } catch (e: Exception) {
-            Log.e("NotificationService", "Failed to send message notification", e)
-        }
-    }
 
     suspend fun notifyCompleteRequest(
         breakdownId: String,

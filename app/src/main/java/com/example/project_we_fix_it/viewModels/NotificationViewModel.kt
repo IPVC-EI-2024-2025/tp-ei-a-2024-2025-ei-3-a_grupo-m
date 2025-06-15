@@ -87,15 +87,4 @@ class NotificationViewModel @Inject constructor(
         }
     }
 
-    fun handleNewNotification(notification: Notification) {
-        _notifications.value += notification
-        if (!notification.read) {
-            _unreadCount.value += 1
-        }
-        _newNotificationEvent.value = notification
-    }
-
-    fun resetNewNotificationEvent() {
-        _newNotificationEvent.value = null
-    }
 }

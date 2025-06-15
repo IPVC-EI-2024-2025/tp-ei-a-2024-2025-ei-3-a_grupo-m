@@ -127,20 +127,6 @@ fun PriorityIndicator(priority: Int) {
     )
 }
 
-fun generateSampleBreakdowns(count: Int, prefix: String): List<BreakdownItem> {
-    return List(count) { index ->
-        BreakdownItem(
-            id = "${index + 1}",
-            title = "$prefix Breakdown ${index + 1}",
-            description = "Supporting line text lorem ipsum dolor sit amet, consectetur.",
-            priority = when (index % 3) {
-                0 -> 1
-                1 -> 2
-                else -> 3
-            }
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
