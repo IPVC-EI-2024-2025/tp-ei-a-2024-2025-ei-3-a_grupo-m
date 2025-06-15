@@ -94,10 +94,17 @@ class AuthViewModel @Inject constructor(
                     )
                 },
                 onFailure = { exception ->
+                    val errorMessage = when {
+                        exception.message?.contains("Invalid login credentials") == true ->
+                            "Email or password is incorrect"
+                        exception.message?.contains("Email not confirmed") == true ->
+                            "Please confirm your email before logging in"
+                        else -> "Login failed. Please try again"
+                    }
                     _authState.value = _authState.value.copy(
                         isLoading = false,
                         isLoggedIn = false,
-                        error = exception.message
+                        error = errorMessage
                     )
                 }
             )
