@@ -153,7 +153,6 @@ fun BreakdownManagementScreen(
                         .fillMaxSize()
                         .padding(horizontal = 16.dp)
                 ) {
-                    // Filter indicator
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -204,11 +203,9 @@ fun BreakdownManagementScreen(
             onDismiss = { showTechnicianDialog = false },
             onAssign = { technicianId ->
                 selectedBreakdown?.let { breakdown ->
-                    // Update breakdown status to in_progress
                     val updatedBreakdown = breakdown.copy(status = "in_progress")
                     viewModel.updateBreakdown(updatedBreakdown)
 
-                    // Create assignment
                     val assignment = Assignment(
                         breakdown_id = breakdown.breakdown_id,
                         technician_id = technicianId,

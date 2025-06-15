@@ -170,14 +170,15 @@ fun BreakdownDetailsScreen(
                             breakdown?.let { bd ->
                                 val currentUserId = authViewModel.currentUserId
                                 if (currentUserId != null) {
-                                    // Determine participants for the chat
-                                    val participants = mutableListOf<String>().apply {
-                                        add(currentUserId) // Always include current user
-                                        bd.reporter_id?.let { add(it) }
-                                        bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
-                                    }.distinct() // Remove duplicates if reporter is also technician
+                                    val hasAssignedTechnician = bd.assignments.any { it.technician_id != null }
 
-                                    if (participants.size > 1) { // Need at least 2 people to chat
+                                    if (hasAssignedTechnician) {
+                                        val participants = mutableListOf<String>().apply {
+                                            add(currentUserId)
+                                            bd.reporter_id?.let { add(it) }
+                                            bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
+                                        }.distinct()
+
                                         chatViewModel.createOrGetChat(
                                             breakdownId = bd.breakdown_id,
                                             participants = participants

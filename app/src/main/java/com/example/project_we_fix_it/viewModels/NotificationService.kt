@@ -180,34 +180,58 @@ class NotificationService @Inject constructor(
         operation: String,
         currentUserId: String
     ) {
-        val affectedUserIds = buildList {
-            breakdown.reporter_id?.let { add(it) }
+        try {
+            val equipmentName = breakdown.equipment_id?.let {
+                supabaseRepository.getEquipmentById(it)?.identifier ?: "Unknown Equipment"
+            } ?: "No Equipment"
 
-            if (operation != "created" && breakdown.breakdown_id != null) {
-                addAll(
+            val affectedUserIds = buildList {
+                breakdown.reporter_id?.let { add(it) }
+
+                if (breakdown.breakdown_id != null) {
+                    addAll(
+                        supabaseRepository.getAllAssignments()
+                            .filter { it.breakdown_id == breakdown.breakdown_id }
+                            .mapNotNull { it.technician_id }
+                    )
+                }
+
+                if (operation == "deleted") {
+                    addAll(supabaseRepository.getUserIdsByRole("admin"))
+                }
+            }.distinct()
+
+            affectedUserIds.forEach { userId ->
+                val isAssignedTechnician = breakdown.breakdown_id?.let {
                     supabaseRepository.getAllAssignments()
-                        .filter { it.breakdown_id == breakdown.breakdown_id }
-                        .mapNotNull { it.technician_id }
+                        .any { a -> a.breakdown_id == it && a.technician_id == userId }
+                } ?: false
+
+                val message = when {
+                    isAssignedTechnician && operation == "updated" ->
+                        "You were assigned to: ${breakdown.description.take(100)} (Equipment: $equipmentName)"
+                    else ->
+                        "${breakdown.description.take(100)} was updated (Equipment: $equipmentName)"
+                }
+
+                val metadata = mapOf(
+                    "by" to (supabaseRepository.getUserProfile(currentUserId)?.name ?: "System"),
+                    "operation" to operation,
+                    "status" to breakdown.status,
+                    "urgency" to breakdown.urgency_level,
+                    "equipment" to equipmentName
                 )
-            }
 
-            if (operation == "deleted") {
-                addAll(supabaseRepository.getUserIdsByRole("admin"))
+                createNotification(
+                    userId = userId,
+                    title = "Breakdown Update",
+                    message = message,
+                    relatedId = breakdown.breakdown_id,
+                    metadata = Json.encodeToString(metadata))
             }
-        }.distinct()
-
-        notifyCrudOperation(
-            entityType = "breakdown",
-            operation = operation,
-            entityId = breakdown.breakdown_id,
-            entityName = breakdown.description.take(30) + "...",
-            currentUserId = currentUserId,
-            affectedUserIds = affectedUserIds,
-            additionalMetadata = mapOf(
-                "status" to breakdown.status,
-                "urgency" to breakdown.urgency_level
-            )
-        )
+        } catch (e: Exception) {
+            Log.e("NotificationService", "Failed to send breakdown notification", e)
+        }
     }
 
     suspend fun notifyAssignmentChange(
@@ -215,24 +239,51 @@ class NotificationService @Inject constructor(
         operation: String,
         currentUserId: String
     ) {
-        val affectedUserIds = buildList {
-            assignment.technician_id?.let { add(it) }
-            assignment.assigned_by?.takeIf { it != currentUserId }?.let { add(it) }
-            if (operation == "deleted") addAll(supabaseRepository.getUserIdsByRole("admin"))
-        }.distinct()
+        try {
+            val technician = assignment.technician_id?.let { supabaseRepository.getUserProfile(it) }
+            val assigner = assignment.assigned_by?.let { supabaseRepository.getUserProfile(it) }
+            val breakdown = assignment.breakdown_id?.let { supabaseRepository.getBreakdownById(it) }
+            val equipmentName = breakdown?.equipment_id?.let {
+                supabaseRepository.getEquipmentById(it)?.identifier ?: "Unknown Equipment"
+            } ?: "No Equipment"
 
-        notifyCrudOperation(
-            entityType = "assignment",
-            operation = operation,
-            entityId = assignment.assignment_id,
-            currentUserId = currentUserId,
-            affectedUserIds = affectedUserIds,
-            additionalMetadata = mapOf(
-                "status" to assignment.status,
-                "breakdown_id" to (assignment.breakdown_id ?: ""),
-                "technician_id" to (assignment.technician_id ?: "")
-            )
-        )
+            val affectedUserIds = buildList {
+                assignment.technician_id?.let { add(it) }
+                assignment.assigned_by?.takeIf { it != currentUserId }?.let { add(it) }
+                if (operation == "deleted") addAll(supabaseRepository.getUserIdsByRole("admin"))
+            }.distinct()
+
+            affectedUserIds.forEach { userId ->
+                val mainMessage = when {
+                    userId == assignment.technician_id && operation == "created" ->
+                        "You were assigned to ${breakdown?.description ?: "a new breakdown"} (Equipment: $equipmentName)"
+
+                    operation == "created" ->
+                        "${technician?.name ?: "A technician"} was assigned to ${breakdown?.description ?: "a breakdown"} (Equipment: $equipmentName)"
+
+                    else ->
+                        "Assignment for ${breakdown?.description ?: "a breakdown"} was updated"
+                }
+
+                val metadata = mapOf(
+                    "technician" to (technician?.name ?: "Unknown"),
+                    "assigned_by" to (assigner?.name ?: "System"),
+                    "equipment" to equipmentName,
+                    "status" to assignment.status,
+                    "type" to "assignment"
+                )
+
+                createNotification(
+                    userId = userId,
+                    title = "Breakdown Assignment",
+                    message = mainMessage,
+                    relatedId = assignment.breakdown_id ?: assignment.assignment_id,
+                    metadata = Json.encodeToString(metadata)
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("NotificationService", "Error sending assignment notification", e)
+        }
     }
 
     suspend fun notifyUserProfileChange(
@@ -297,7 +348,6 @@ class NotificationService @Inject constructor(
         currentUserId: String
     ) {
         try {
-            // Get chat participants
             val chat = message.chat_id?.let {
                 supabaseRepository.getChatByBreakdownId(it)
             } ?: return
