@@ -1,23 +1,22 @@
 package com.example.project_we_fix_it
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
@@ -39,6 +38,7 @@ fun BreakdownDetailsScreen(
     }
 
     val breakdown by breakdownViewModel.breakdown.collectAsState()
+    val photos by breakdownViewModel.photos.collectAsState()
     val isLoading by breakdownViewModel.isLoading.collectAsState()
     val createdChatId by chatViewModel.createdChatId.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
@@ -55,7 +55,6 @@ fun BreakdownDetailsScreen(
             }
         )
     }
-
 
     WeFixItAppScaffold(
         title = "Breakdown Details",
@@ -130,17 +129,38 @@ fun BreakdownDetailsScreen(
                     if (it.isLowerCase()) it.titlecase(
                         Locale.ROOT
                     ) else it.toString()
-                }
-                    ?: "Unknown")
+                } ?: "Unknown")
 
-                // Photos section if available
-                if (!breakdown?.photos.isNullOrEmpty()) {
+                // Photos section
+                if (photos.isNotEmpty()) {
                     Text(
                         text = "Photos",
                         style = MaterialTheme.typography.headlineSmall
                     )
-                    // Here you would display the photos - implement this based on your image loading solution
-                    Text("${breakdown?.photos?.size} photos available")
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(photos) { photo ->
+                            Box(
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                            ) {
+                                Image(
+                                    painter = rememberImagePainter(
+                                        data = photo.photo_url,
+                                        builder = {
+                                            crossfade(true)
+                                        }
+                                    ),
+                                    contentDescription = "Breakdown photo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -194,11 +214,6 @@ fun BreakdownDetailsScreen(
                     LaunchedEffect(createdChatId) {
                         createdChatId?.let { chatId ->
                             commonActions.navigateToChat(chatId)
-                        }
-                    }
-                    LaunchedEffect(createdChatId) {
-                        createdChatId?.let { chatId ->
-                            commonActions.navigateToChat(chatId)
                             // Clear the ID after navigation
                             chatViewModel._createdChatId.value = null
                         }
@@ -208,8 +223,6 @@ fun BreakdownDetailsScreen(
         }
     }
 }
-
-
 
 @Composable
 fun DetailRow(label: String, value: String) {

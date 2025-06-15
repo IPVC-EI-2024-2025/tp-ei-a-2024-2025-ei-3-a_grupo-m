@@ -130,6 +130,8 @@ dependencies {
     implementation(libs.compose.runtime)
     implementation(libs.compose.activity)
 
+    implementation(libs.coil.compose)
+
     // For debugging
     debugImplementation(libs.compose.ui.tooling)
 

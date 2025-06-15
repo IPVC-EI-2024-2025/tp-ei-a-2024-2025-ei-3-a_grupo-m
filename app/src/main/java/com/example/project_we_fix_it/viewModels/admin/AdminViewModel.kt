@@ -7,6 +7,7 @@ import com.example.project_we_fix_it.auth.AuthRepository
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.supabase.Assignment
 import com.example.project_we_fix_it.supabase.Breakdown
+import com.example.project_we_fix_it.supabase.BreakdownPhoto
 import com.example.project_we_fix_it.supabase.Equipment
 import com.example.project_we_fix_it.supabase.Notification
 import com.example.project_we_fix_it.supabase.SupabaseRepository
@@ -39,6 +40,9 @@ class AdminViewModel @Inject constructor(
     private val _assignments = MutableStateFlow<List<Assignment>>(emptyList())
     val assignments: StateFlow<List<Assignment>> = _assignments.asStateFlow()
 
+    private val _breakdownPhotos = MutableStateFlow<Map<String, List<BreakdownPhoto>>>(emptyMap())
+    val breakdownPhotos: StateFlow<Map<String, List<BreakdownPhoto>>> = _breakdownPhotos.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -53,6 +57,14 @@ class AdminViewModel @Inject constructor(
                 _equipment.value = supabaseRepository.getAllEquipment()
                 _breakdowns.value = supabaseRepository.getAllBreakdowns()
                 _assignments.value = supabaseRepository.getAllAssignments()
+
+                val photosMap = mutableMapOf<String, List<BreakdownPhoto>>()
+                _breakdowns.value.forEach { breakdown ->
+                    breakdown.breakdown_id?.let { id ->
+                        photosMap[id] = supabaseRepository.getBreakdownPhotos(id)
+                    }
+                }
+                _breakdownPhotos.value = photosMap
             } catch (e: Exception) {
                 _error.value = "Failed to load data: ${e.message}"
             } finally {
@@ -237,6 +249,26 @@ class AdminViewModel @Inject constructor(
                 throw Exception("Error deleting breakdown: ${e.message}")
             }
         }
+    }
+
+    fun uploadBreakdownPhoto(breakdownId: String, imageBytes: ByteArray, fileName: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val photo = supabaseRepository.uploadBreakdownPhoto(breakdownId, imageBytes, fileName)
+                _breakdownPhotos.value = _breakdownPhotos.value.toMutableMap().apply {
+                    put(breakdownId, (this[breakdownId] ?: emptyList()) + photo)
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to upload photo: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getBreakdownPhotos(breakdownId: String): List<BreakdownPhoto> {
+        return _breakdownPhotos.value[breakdownId] ?: emptyList()
     }
 
     fun createAssignment(assignment: Assignment) {

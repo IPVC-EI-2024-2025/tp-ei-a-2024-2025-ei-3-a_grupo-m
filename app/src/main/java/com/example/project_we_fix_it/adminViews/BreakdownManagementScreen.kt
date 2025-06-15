@@ -4,11 +4,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,9 +27,29 @@ import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.supabase.Assignment
 import com.example.project_we_fix_it.supabase.Breakdown
+import com.example.project_we_fix_it.supabase.BreakdownPhoto
 import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.admin.AdminViewModel
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.rememberAsyncImagePainter
+import java.io.ByteArrayOutputStream
 import android.R as AndroidR
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,12 +60,15 @@ fun BreakdownManagementScreen(
     val breakdowns by viewModel.breakdowns.collectAsState()
     val users by viewModel.users.collectAsState()
     val assignments by viewModel.assignments.collectAsState()
+    val breakdownPhotos by viewModel.breakdownPhotos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     var filterStatus by remember { mutableStateOf("all") }
     var showTechnicianDialog by remember { mutableStateOf(false) }
     var selectedBreakdown by remember { mutableStateOf<Breakdown?>(null) }
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showPhotoDialog by remember { mutableStateOf(false) }
+    var selectedBreakdownForPhotos by remember { mutableStateOf<Breakdown?>(null) }
 
     // Filter breakdowns based on selected status
     val filteredBreakdowns = remember(breakdowns, filterStatus) {
@@ -179,6 +205,7 @@ fun BreakdownManagementScreen(
                         items(filteredBreakdowns) { breakdown ->
                             BreakdownCard(
                                 breakdown = breakdown,
+                                photos = breakdownPhotos[breakdown.breakdown_id] ?: emptyList(),
                                 onClick = {
                                     breakdown.breakdown_id?.let {
                                         commonActions.navigateToBreakdownDetails(it)
@@ -187,6 +214,10 @@ fun BreakdownManagementScreen(
                                 onAssignClick = {
                                     selectedBreakdown = breakdown
                                     showTechnicianDialog = true
+                                },
+                                onPhotosClick = {
+                                    selectedBreakdownForPhotos = breakdown
+                                    showPhotoDialog = true
                                 },
                                 viewModel = viewModel
                             )
@@ -216,8 +247,8 @@ fun BreakdownManagementScreen(
                 showTechnicianDialog = false
                 selectedBreakdown = null
             },
-            viewModel = viewModel, // Passe o viewModel
-            breakdown = selectedBreakdown!! // Passe a avaria selecionada
+            viewModel = viewModel,
+            breakdown = selectedBreakdown!!
         )
     }
 
@@ -231,17 +262,32 @@ fun BreakdownManagementScreen(
             }
         )
     }
+
+    if (showPhotoDialog && selectedBreakdownForPhotos != null) {
+        PhotoManagementDialog(
+            breakdown = selectedBreakdownForPhotos!!,
+            photos = breakdownPhotos[selectedBreakdownForPhotos!!.breakdown_id] ?: emptyList(),
+            viewModel = viewModel,
+            onDismiss = {
+                showPhotoDialog = false
+                selectedBreakdownForPhotos = null
+            }
+        )
+    }
 }
 
 @Composable
 private fun BreakdownCard(
     breakdown: Breakdown,
+    photos: List<BreakdownPhoto>,
     onClick: () -> Unit,
     onAssignClick: () -> Unit,
+    onPhotosClick: () -> Unit,
     viewModel: AdminViewModel
 ) {
     val equipment by viewModel.equipment.collectAsStateWithLifecycle()
     val currentEquipment = equipment.find { it.equipment_id == breakdown.equipment_id }
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -279,11 +325,11 @@ private fun BreakdownCard(
                 }
 
                 // Status dropdown
-                var expanded by remember { mutableStateOf(false) }
+                var statusExpanded by remember { mutableStateOf(false) }
                 Box {
                     Box(
                         modifier = Modifier
-                            .clickable { expanded = true }
+                            .clickable { statusExpanded = true }
                             .background(
                                 color = when (breakdown.status) {
                                     "open" -> Color(0xFFFFA726)
@@ -303,8 +349,8 @@ private fun BreakdownCard(
                     }
 
                     DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        expanded = statusExpanded,
+                        onDismissRequest = { statusExpanded = false }
                     ) {
                         listOf("open", "in_progress", "completed").forEach { status ->
                             DropdownMenuItem(
@@ -313,7 +359,7 @@ private fun BreakdownCard(
                                 },
                                 onClick = {
                                     viewModel.updateBreakdown(breakdown.copy(status = status))
-                                    expanded = false
+                                    statusExpanded = false
                                 }
                             )
                         }
@@ -334,18 +380,280 @@ private fun BreakdownCard(
                     color = Color.Gray
                 )
 
-                if (breakdown.status == "open") {
-                    Button(
-                        onClick = onAssignClick,
-                        modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF5C5CFF),
-                            contentColor = Color.White
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Photos button
+                    IconButton(
+                        onClick = onPhotosClick,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Badge(
+                            containerColor = if (photos.isNotEmpty()) Color(0xFF5C5CFF) else Color.Gray
+                        ) {
+                            Text(
+                                text = photos.size.toString(),
+                                color = Color.White,
+                                fontSize = 10.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Photos (${photos.size})",
+                            tint = if (photos.isNotEmpty()) Color(0xFF5C5CFF) else Color.Gray
                         )
+                    }
+
+                    if (breakdown.status == "open") {
+                        Button(
+                            onClick = onAssignClick,
+                            modifier = Modifier.height(32.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF5C5CFF),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(
+                                text = "Assign",
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Expandable photo preview
+            if (photos.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = !expanded },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Photos (${photos.size})",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand",
+                        tint = Color.Gray
+                    )
+                }
+
+                if (expanded) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(photos.take(3)) { photo ->
+                            Image(
+                                painter = rememberAsyncImagePainter(photo.photo_url),
+                                contentDescription = "Breakdown photo",
+                                modifier = Modifier
+                                    .size(60.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        if (photos.size > 3) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.Gray.copy(alpha = 0.3f))
+                                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "+${photos.size - 3}",
+                                        fontSize = 12.sp,
+                                        color = Color.DarkGray
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoManagementDialog(
+    breakdown: Breakdown,
+    photos: List<BreakdownPhoto>,
+    viewModel: AdminViewModel,
+    onDismiss: () -> Unit
+) {
+    var showFullImage by remember { mutableStateOf(false) }
+    var selectedPhotoUrl by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    // Image picker launcher
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                val outputStream = ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, outputStream)
+                val imageBytes = outputStream.toByteArray()
+                val fileName = "photo_${System.currentTimeMillis()}.jpg"
+
+                breakdown.breakdown_id?.let { breakdownId ->
+                    viewModel.uploadBreakdownPhoto(breakdownId, imageBytes, fileName)
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Photos - ${breakdown.breakdown_id}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Add photo button
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF5C5CFF)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Photo"
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Add Photo")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Photos grid
+                if (photos.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Assign",
-                            fontSize = 12.sp
+                            text = "No photos available",
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(photos.chunked(2)) { photoRow ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                photoRow.forEach { photo ->
+                                    PhotoItem(
+                                        photo = photo,
+                                        modifier = Modifier.weight(1f),
+                                        onClick = {
+                                            selectedPhotoUrl = photo.photo_url
+                                            showFullImage = true
+                                        },
+//                                        onDelete = {
+//                                            photo.photo_id?.let { photoId ->
+//                                                val filePath = photo.photo_url
+//                                                    .substringAfterLast("breakdown_photos/")
+//                                                    .substringBefore("?")
+//                                                viewModel.deleteBreakdownPhoto(photoId, filePath)
+//                                            }
+//                                        }
+                                    )
+                                }
+                                // Fill remaining space if odd number of photos
+                                if (photoRow.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Full image dialog
+    if (showFullImage) {
+        Dialog(
+            onDismissRequest = { showFullImage = false }
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(selectedPhotoUrl),
+                        contentDescription = "Full size photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
+                    )
+
+                    IconButton(
+                        onClick = { showFullImage = false },
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.White
                         )
                     }
                 }
@@ -354,6 +662,76 @@ private fun BreakdownCard(
     }
 }
 
+@Composable
+private fun PhotoItem(
+    photo: BreakdownPhoto,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+//    onDelete: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(photo.photo_url),
+                contentDescription = "Breakdown photo",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            // Delete button
+//            IconButton(
+//                onClick = onDelete,
+//                modifier = Modifier
+//                    .align(Alignment.TopEnd)
+//                    .background(
+//                        Color.Black.copy(alpha = 0.5f),
+//                        CircleShape
+//                    )
+//                    .size(32.dp)
+//            ) {
+//                Icon(
+//                    imageVector = Icons.Default.Delete,
+//                    contentDescription = "Delete photo",
+//                    tint = Color.White,
+//                    modifier = Modifier.size(16.dp)
+//                )
+//            }
+
+            // Upload date
+            photo.uploaded_at?.let { uploadedAt ->
+                val formattedDate = try {
+                    val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(uploadedAt)
+                    SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(date!!)
+                } catch (e: Exception) {
+                    "Unknown date"
+                }
+
+                Text(
+                    text = formattedDate,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .background(
+                            Color.Black.copy(alpha = 0.7f),
+                            RoundedCornerShape(topEnd = 8.dp)
+                        )
+                        .padding(4.dp),
+                    fontSize = 10.sp,
+                    color = Color.White
+                )
+            }
+        }
+    }
+}
+
+// Keep the existing TechnicianAssignmentDialog and BreakdownCreateDialog as they are
 @Composable
 private fun TechnicianAssignmentDialog(
     technicians: List<UserProfile>,

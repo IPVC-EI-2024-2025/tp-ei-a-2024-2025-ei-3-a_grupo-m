@@ -1,13 +1,22 @@
 package com.example.project_we_fix_it
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -16,12 +25,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.viewModels.BreakdownReportingViewModel
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BreakdownReportingScreen(
     commonActions: CommonScreenActions,
-    onSave: () -> Unit,
+    onSave: (breakdownId: String) -> Unit,
     viewModel: BreakdownReportingViewModel = hiltViewModel()
 ) {
     var breakdownName by remember { mutableStateOf("") }
@@ -34,16 +47,22 @@ fun BreakdownReportingScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
+    val photosToUpload by viewModel.photosToUpload.collectAsState()
     val urgencyLevels = listOf("Low", "Normal", "High", "Critical")
+    val context = LocalContext.current
 
-
-    LaunchedEffect(isSuccess) {
-        if (isSuccess) {
-            onSave()
-            viewModel.clearState()
+    // Image picker launcher
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val imageBytes = inputStream.readBytes()
+                    viewModel.addPhotoToUpload(imageBytes)
+                }
+            }
         }
-    }
-
+    )
 
     WeFixItAppScaffold(
         title = "Report Breakdown",
@@ -97,6 +116,55 @@ fun BreakdownReportingScreen(
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
+
+                // Photo upload section
+                Text(
+                    text = "Photos (Optional)",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                // Selected photos preview
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(photosToUpload.size) { index ->
+                        Box(
+                            modifier = Modifier.size(100.dp),
+                            contentAlignment = Alignment.TopEnd
+                        ) {
+                            val bitmap = remember(photosToUpload[index]) {
+                                BitmapFactory.decodeByteArray(photosToUpload[index], 0, photosToUpload[index].size)
+                            }
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Selected photo $index",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { viewModel.removePhotoToUpload(index) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remove photo",
+                                    tint = Color.Red
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Button(
+                    onClick = { imagePicker.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Add Photo")
+                }
+
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },

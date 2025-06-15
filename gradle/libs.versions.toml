@@ -34,6 +34,7 @@ compose-runtime = "1.5.4"
 compose-ui = "1.5.4"
 compose-foundation = "1.5.4"
 compose-material3 = "1.2.0"
+coil = "2.4.0"
 
 [libraries]
 # Core Android
@@ -104,6 +105,8 @@ compose-foundation = { group = "androidx.compose.foundation", name = "foundation
 compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "compose-material3" }
 compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "compose-runtime" }
 compose-activity = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
+
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version = "8.8.0" }

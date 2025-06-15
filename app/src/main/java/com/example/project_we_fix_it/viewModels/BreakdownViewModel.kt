@@ -18,6 +18,9 @@ class BreakdownViewModel @Inject constructor(
     private val _breakdown = MutableStateFlow<BreakdownWithDetails?>(null)
     val breakdown: StateFlow<BreakdownWithDetails?> = _breakdown.asStateFlow()
 
+    private val _photos = MutableStateFlow<List<BreakdownPhoto>>(emptyList())
+    val photos: StateFlow<List<BreakdownPhoto>> = _photos.asStateFlow()
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -39,7 +42,9 @@ class BreakdownViewModel @Inject constructor(
                 val assignments = supabaseRepository.getAllAssignments()
                     .filter { it.breakdown_id == breakdownId }
 
-                val photos = supabaseRepository.getBreakdownPhotos(breakdownId)
+                // Get photos with fresh URLs
+                val photos = supabaseRepository.getBreakdownPhotosWithUrls(breakdownId)
+                _photos.value = photos
 
                 // Combine into BreakdownWithDetails
                 _breakdown.value = BreakdownWithDetails(
@@ -58,6 +63,40 @@ class BreakdownViewModel @Inject constructor(
                 )
             } catch (e: Exception) {
                 _error.value = "Failed to load breakdown details: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun uploadPhoto(breakdownId: String, imageBytes: ByteArray, fileName: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val photo = supabaseRepository.uploadBreakdownPhoto(breakdownId, imageBytes, fileName)
+                _photos.value += photo
+                // Refresh breakdown details to include the new photo
+                loadBreakdownDetails(breakdownId)
+            } catch (e: Exception) {
+                _error.value = "Failed to upload photo: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun deletePhoto(photoId: String, filePath: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val success = supabaseRepository.deleteBreakdownPhoto(photoId, filePath)
+                if (success) {
+                    _photos.value = _photos.value.filter { it.photo_id != photoId }
+                    // Refresh breakdown details
+                    _breakdown.value?.breakdown_id?.let { loadBreakdownDetails(it) }
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to delete photo: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -91,6 +130,7 @@ class BreakdownViewModel @Inject constructor(
             }
         }
     }
+
     suspend fun getTechnicianName(technicianId: String): String? {
         return supabaseRepository.getUserProfile(technicianId)?.name
     }

@@ -7,6 +7,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale.filter
@@ -14,6 +15,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Clock
 import kotlin.time.Clock.System.now
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -446,37 +449,87 @@ class SupabaseRepository @Inject constructor() {
         }
     }
 
-    suspend fun addBreakdownPhoto(photo: BreakdownPhoto): BreakdownPhoto = withContext(Dispatchers.IO) {
+    @OptIn(ExperimentalTime::class)
+    suspend fun uploadBreakdownPhoto(
+        breakdownId: String,
+        imageBytes: ByteArray,
+        fileName: String
+    ): BreakdownPhoto = withContext(Dispatchers.IO) {
         try {
+            val bucket = client.storage.from(SupabaseClient.BUCKET_NAME)
+
+            val filePath = "$breakdownId/$fileName"
+            bucket.upload(filePath, imageBytes) {
+                upsert = false
+            }
+
+            val downloadUrl = client.storage
+                .from(SupabaseClient.BUCKET_NAME)
+                .createSignedUrl(filePath, 7.days)
+
+            val photo = BreakdownPhoto(
+                breakdown_id = breakdownId,
+                photo_url = downloadUrl,
+                uploaded_at = now().toString()
+            )
+
             client.from("breakdown_photos")
                 .insert(photo)
                 .decodeSingle()
         } catch (e: Exception) {
-            throw Exception("Error adding breakdown photo: ${e.message}")
+            Log.d("SupabaseRepository", "Error uploading photo", e)
+            if (e.message?.contains("Expected start of the array") == true) {
+                Log.d("SupabaseRepository", "Supabase returned array error, but updating local state anyway")
+            }else {
+                Log.d("SupabaseRepository", "Error uploading photo: ${e.message}")
+            }
+            throw Exception("Error uploading photo: ${e.message}")
+        }finally {
+            Log.d("SupabaseRepository", "Photo upload completed")
         }
     }
-    suspend fun deleteBreakdownPhoto(photoId: String): Boolean = withContext(Dispatchers.IO) {
+
+    suspend fun getBreakdownPhotosWithUrls(breakdownId: String): List<BreakdownPhoto> = withContext(Dispatchers.IO) {
         try {
+            // First get all photo records
+            val photos = client.from("breakdown_photos")
+                .select {
+                    filter { eq("breakdown_id", breakdownId) }
+                }
+                .decodeList<BreakdownPhoto>()
+
+            photos.map { photo ->
+                val filePath = photo.photo_url.substringAfterLast("${SupabaseClient.BUCKET_NAME}/")
+                    .substringBefore("?")
+
+                val freshUrl = client.storage
+                    .from(SupabaseClient.BUCKET_NAME)
+                    .createSignedUrl(filePath, 1.hours)
+
+                photo.copy(photo_url = freshUrl)
+            }
+        } catch (e: Exception) {
+            Log.e("SupabaseRepository", "Error getting photos with URLs", e)
+            throw Exception("Failed to get photos: ${e.message}")
+        }
+    }
+
+    suspend fun deleteBreakdownPhoto(photoId: String, filePath: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            // Delete from storage first using consistent client reference
+            client.storage
+                .from(SupabaseClient.BUCKET_NAME)
+                .delete(listOf(filePath))
+
+            // Then delete the database record
             client.from("breakdown_photos").delete {
                 filter { eq("photo_id", photoId) }
             }
-            true
-            } catch (e: Exception) {
-                false
-            }
-    }
 
-    suspend fun updateBreakdownPhoto(photo: BreakdownPhoto): BreakdownPhoto = withContext(Dispatchers.IO) {
-        try {
-            client.from("breakdown_photos")
-                .update({
-                    set("photo_url", photo.photo_url)
-                }) {
-                    filter { photo.photo_id?.let { eq("photo_id", it) } }
-                    }
-                .decodeSingle()
+            true
         } catch (e: Exception) {
-            throw Exception("Error updating breakdown photo: ${e.message}")
+            Log.e("SupabaseRepository", "Error deleting photo", e)
+            false
         }
     }
     // ========== MESSAGES ==========

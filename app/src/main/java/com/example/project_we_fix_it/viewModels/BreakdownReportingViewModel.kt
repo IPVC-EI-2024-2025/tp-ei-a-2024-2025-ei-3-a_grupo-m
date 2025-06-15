@@ -33,13 +33,24 @@ class BreakdownReportingViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _photosToUpload = MutableStateFlow<List<ByteArray>>(emptyList())
+    val photosToUpload: StateFlow<List<ByteArray>> = _photosToUpload.asStateFlow()
+
     private val notificationService: NotificationService = NotificationService(supabaseRepository, authRepository)
+
+    fun addPhotoToUpload(imageBytes: ByteArray) {
+        _photosToUpload.value += imageBytes
+    }
+
+    fun removePhotoToUpload(index: Int) {
+        _photosToUpload.value = _photosToUpload.value.toMutableList().apply { removeAt(index) }
+    }
 
     fun reportBreakdown(
         description: String,
         location: String,
         urgencyLevel: String,
-        onSuccess: () -> Unit
+        onSuccess: (breakdownId: String) -> Unit
     ) {
         _isLoading.value = true
         _errorMessage.value = null
@@ -60,6 +71,7 @@ class BreakdownReportingViewModel @Inject constructor(
                     "critical" -> "critical"
                     else -> "normal"
                 }
+
                 Log.d("BreakdownsReporting", "Breakdown reported by: $currentUserId")
                 val breakdown = Breakdown(
                     breakdown_id = null,
@@ -73,14 +85,29 @@ class BreakdownReportingViewModel @Inject constructor(
                     estimated_completion = null
                 )
 
-                supabaseRepository.createBreakdown(breakdown)
+                // Create the breakdown first
+                val createdBreakdown = supabaseRepository.createBreakdown(breakdown)
+                val breakdownId = createdBreakdown.breakdown_id ?: throw Exception("Failed to get breakdown ID")
+
+                // Upload photos if any
+                _photosToUpload.value.forEachIndexed { index, imageBytes ->
+                    supabaseRepository.uploadBreakdownPhoto(
+                        breakdownId = breakdownId,
+                        imageBytes = imageBytes,
+                        fileName = "photo_$index.jpg"
+                    )
+                }
+
                 _isSuccess.value = true
-                onSuccess()
+                onSuccess(breakdownId)
                 notificationService.notifyBreakdownChange(
-                    breakdown = breakdown,
+                    breakdown = createdBreakdown,
                     operation = "created",
-                    currentUserId = authRepository.getCurrentUser()?.id ?: ""
+                    currentUserId = currentUserId
                 )
+
+                // Clear photos after successful upload
+                _photosToUpload.value = emptyList()
             } catch (e: Exception) {
                 if (e.message?.contains("Expected start of the array") == true) {
                     Log.d("BreakdownReporting", "Supabase returned array error, but creating local state anyway")
@@ -103,5 +130,6 @@ class BreakdownReportingViewModel @Inject constructor(
     fun clearState() {
         _errorMessage.value = null
         _isSuccess.value = false
+        _photosToUpload.value = emptyList()
     }
 }
