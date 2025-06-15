@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -128,7 +129,7 @@ fun EditProfileScreen(
     profileViewModel.error.collectAsStateWithLifecycle().value?.let { error ->
         AlertDialog(
             onDismissRequest = { profileViewModel.clearError() },
-            title = { Text("Error") },
+            title = { Text(stringResource(R.string.error)) },
             text = { Text(error) },
             confirmButton = {
                 TextButton(
@@ -148,8 +149,8 @@ fun EditProfileScreen(
                 showSaveSuccess = false
                 onBack()
             },
-            title = { Text("Profile Updated") },
-            text = { Text("Your profile has been successfully updated.") },
+            title = { Text(stringResource(R.string.profile_updated)) },
+            text = { Text(stringResource(R.string.profile_successfully_updated)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -168,7 +169,7 @@ fun EditProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Edit Profile",
+                        text = stringResource(R.string.edit_profile),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -200,7 +201,7 @@ fun EditProfileScreen(
                                 contentDescription = "Profile"
                             )
                         },
-                        label = { Text("Profile") },
+                        label = { Text(stringResource(R.string.profile)) },
                         selected = true,
                         onClick = onNavigateToProfile
                     )
@@ -211,7 +212,7 @@ fun EditProfileScreen(
                                 contentDescription = "Home"
                             )
                         },
-                        label = { Text("Home") },
+                        label = { Text(stringResource(R.string.home)) },
                         selected = false,
                         onClick = onNavigateToHome
                     )
@@ -222,7 +223,7 @@ fun EditProfileScreen(
                                 contentDescription = "Notifications"
                             )
                         },
-                        label = { Text("Notifications") },
+                        label = { stringResource(R.string.notifications)},
                         selected = false,
                         onClick = onNavigateToNotifications
                     )
@@ -293,7 +294,7 @@ fun EditProfileScreen(
                     .padding(horizontal = 16.dp)
             ) {
                 ProfileTextField(
-                    label = "Name",
+                    label = stringResource(R.string.name),
                     value = name,
                     placeholder = currentProfile?.name ?: "Name not defined",
                     onValueChange = { name = it },
@@ -303,18 +304,18 @@ fun EditProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 ProfileTextField(
-                    label = "Email",
+                    label = stringResource(R.string.email),
                     value = email,
                     placeholder = user?.email ?: "Email not defined" ,
                     onValueChange = { email = it },
                     iconResId = AndroidR.drawable.ic_dialog_email,
-                    enabled = false // Email shouldn't be editable directly
+                    enabled = false
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 ProfileTextField(
-                    label = "Phone Number",
+                    label = stringResource(R.string.phone),
                     value = phoneNumber,
                     placeholder = currentProfile?.phone ?: "Phone not defined",
                     onValueChange = { phoneNumber = it },
@@ -326,7 +327,7 @@ fun EditProfileScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("New Password (leave empty to keep current)") },
+                    label = { Text(stringResource(R.string.change_password)) },
                     modifier = Modifier.fillMaxWidth(),
                     leadingIcon = {
                         Icon(
@@ -387,7 +388,7 @@ fun EditProfileScreen(
                     )
                 ) {
                     Text(
-                        text = "Save",
+                        text = stringResource(R.string.save),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )

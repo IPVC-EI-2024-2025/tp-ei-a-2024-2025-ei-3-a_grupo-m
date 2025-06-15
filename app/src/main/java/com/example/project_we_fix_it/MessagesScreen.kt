@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -38,7 +39,6 @@ fun ChatItem(
     breakdowns: List<Breakdown>,
     onClick: () -> Unit
 ) {
-    // Filter out current user from participants
     val otherParticipants = chat.participants.filter { it != currentUserId }
     Log.d("ChatItem", "Other Participants: $otherParticipants")
     val participantNames = otherParticipants.joinToString {
@@ -61,7 +61,6 @@ fun ChatItem(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Profile icon
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Profile",
@@ -71,7 +70,6 @@ fun ChatItem(
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                // BREAKDOWN names
                 Text(
                     text = breakdownName,
                     style = MaterialTheme.typography.bodyLarge,
@@ -80,9 +78,8 @@ fun ChatItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Last message preview
                 Text(
-                    text = chat.lastMessagePreview ?: "No messages yet",
+                    text = chat.lastMessagePreview ?: stringResource(R.string.no_messages),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray,
                     maxLines = 1,
@@ -104,7 +101,7 @@ fun ChatItem(
 
 fun formatTimestamp(timestamp: String): String {
 
-    return timestamp // Simplified - implement proper formatting
+    return timestamp
 }
 
 @Composable
@@ -162,7 +159,7 @@ fun MessagesScreen(
             }
         } else if (chats.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No messages yet")
+                Text(stringResource(R.string.no_messages))
             }
         } else {
             LazyColumn(

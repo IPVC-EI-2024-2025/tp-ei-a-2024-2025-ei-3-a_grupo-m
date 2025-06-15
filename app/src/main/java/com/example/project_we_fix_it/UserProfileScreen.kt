@@ -28,6 +28,7 @@ import com.example.project_we_fix_it.nav.CommonScreenActions
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,8 +68,8 @@ fun UserProfileScreen(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Logout") },
-            text = { Text("Are you sure you want to logout?") },
+            title = { Text(stringResource(R.string.logout)) },
+            text = { Text(stringResource(R.string.logout_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -76,21 +77,21 @@ fun UserProfileScreen(
                         authViewModel.logout()
                     }
                 ) {
-                    Text("Yes", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.yes), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = { showLogoutDialog = false }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
 
     WeFixItAppScaffold(
-        title = "Profile",
+        title = stringResource(R.string.profile),
         currentRoute = "profile",
         navController = commonActions.navController,
         onNavigateToProfile = commonActions.navigateToProfile,
@@ -185,7 +186,7 @@ fun UserProfileScreen(
             ) {
                 ProfileInfoItem(
                     icon = Icons.Default.Email,
-                    title = "Email",
+                    title = stringResource(R.string.email),
                     value = user?.email ?: "Not available"
                 )
 
@@ -193,7 +194,7 @@ fun UserProfileScreen(
 
                 ProfileInfoItem(
                     icon = Icons.Default.Work,
-                    title = "Role",
+                    title = stringResource(R.string.role),
                     value = userProfile?.role?.replaceFirstChar { it.uppercase() } ?: "Technician"
                 )
 
@@ -201,7 +202,7 @@ fun UserProfileScreen(
 
                 ProfileInfoItem(
                     icon = Icons.Default.Info,
-                    title = "Status",
+                    title = stringResource(R.string.status),
                     value = userProfile?.status?.replaceFirstChar { it.uppercase() } ?: "Active"
                 )
 
@@ -225,7 +226,7 @@ fun UserProfileScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Logout",
+                        text = stringResource(R.string.logout),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium
                     )

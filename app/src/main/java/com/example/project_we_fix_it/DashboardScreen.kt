@@ -42,7 +42,7 @@ fun DashboardScreen(
     }
 
     WeFixItAppScaffold(
-        title = "Home",
+        title = stringResource(R.string.home),
         currentRoute = "home",
         navController = commonActions.navController,
         onNavigateToProfile = commonActions.navigateToProfile,

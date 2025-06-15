@@ -35,7 +35,7 @@ fun ProfileInfoItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon,  // Now using imageVector
+            imageVector = icon,
             contentDescription = title,
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             modifier = Modifier.size(24.dp)

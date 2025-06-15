@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,8 +46,8 @@ fun BreakdownDetailsScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Cannot Start Chat") },
-            text = { Text("Someone needs to be assigned to talk in this chat") },
+            title = { Text(stringResource(R.string.not_assigned)) },
+            text = { Text(stringResource(R.string.not_assigned2)) },
             confirmButton = {
                 Button(onClick = { showDialog = false }) {
                     Text("OK")
@@ -55,6 +55,7 @@ fun BreakdownDetailsScreen(
             }
         )
     }
+
 
     WeFixItAppScaffold(
         title = "Breakdown Details",
