@@ -15,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.project_we_fix_it.R
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.viewModels.admin.AdminViewModel
@@ -70,14 +72,14 @@ fun AdminDashboardScreen(
             ) {
                 DashboardCard(
                     icon = Icons.Default.People,
-                    title = "Users",
+                    title = stringResource(R.string.users),
                     count = users.size,
                     onClick = { commonActions.navController.navigate("admin/users") }
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 DashboardCard(
                     icon = Icons.Default.Build,
-                    title = "Equipment",
+                    title = stringResource(R.string.equipment),
                     count = equipment.size,
                     onClick = { commonActions.navController.navigate("admin/equipment") }
                 )
@@ -91,14 +93,14 @@ fun AdminDashboardScreen(
             ) {
                 DashboardCard(
                     icon = Icons.Default.Warning,
-                    title = "Breakdowns",
+                    title = stringResource(R.string.breakdowns),
                     count = breakdowns.size,
                     onClick = { commonActions.navController.navigate("admin/breakdowns") }
                 )
                 Spacer(modifier = Modifier.width(16.dp))
                 DashboardCard(
                     icon = Icons.Default.Task,
-                    title = "Assignments",
+                    title = stringResource(R.string.assignments),
                     count = 0, // You might want to add assignments count to your view model
                     onClick = { commonActions.navController.navigate("admin/assignments") }
                 )
@@ -108,7 +110,7 @@ fun AdminDashboardScreen(
 
             // Recent Breakdowns
             Text(
-                text = "Recent Breakdowns",
+                text = stringResource(R.string.recent_breakdowns),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -121,7 +123,7 @@ fun AdminDashboardScreen(
                         .padding(vertical = 16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No recent breakdowns")
+                    Text(text = stringResource(R.string.no_recent_breakdowns))
                 }
             } else {
                 LazyColumn(
@@ -136,7 +138,7 @@ fun AdminDashboardScreen(
                             leadingContent = {
                                 Icon(
                                     imageVector = Icons.Default.Warning,
-                                    contentDescription = "Breakdown"
+                                    contentDescription = stringResource(R.string.breakdowns)
                                 )
                             }
                         )

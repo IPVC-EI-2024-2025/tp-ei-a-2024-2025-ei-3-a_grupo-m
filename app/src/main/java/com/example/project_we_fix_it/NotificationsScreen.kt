@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -176,7 +177,7 @@ fun NotificationsScreen(
                         IconButton(
                             onClick = { showDeleteDialog.value = true }
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete all notifications")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_all_confirmation))
                         }
                     }
                 }
@@ -191,7 +192,7 @@ fun NotificationsScreen(
                         .padding(padding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No new notifications")
+                    Text(text = stringResource(R.string.no_notifications))
                 }
             }
             else -> {

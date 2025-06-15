@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,7 +77,7 @@ fun DashboardScreen(
                 }
 
                 Text(
-                    text = "Active Breakdowns",
+                    text = stringResource(R.string.active_breakdowns),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -98,7 +99,7 @@ fun DashboardScreen(
                             .weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No active breakdowns found")
+                        Text(text = stringResource(R.string.no_active_breakdowns))
                     }
                 } else {
                     LazyColumn(
@@ -195,7 +196,7 @@ fun DashboardScreen(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    "Report a breakdown",
+                                    text = stringResource(R.string.report_breakdown),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp
                                 )
@@ -217,7 +218,7 @@ fun DashboardScreen(
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Text(
-                                    "View Assignments",
+                                    text = stringResource(R.string.view_assignments),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp
                                 )

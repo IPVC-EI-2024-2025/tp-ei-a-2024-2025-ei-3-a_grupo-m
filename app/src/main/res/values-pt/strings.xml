@@ -1,3 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Login Screen -->
+    <string name="app_name">We Fix It</string>
+    <string name="insert_email">Insira seu email aqui</string>
+    <string name="insert_password">Insira sua senha aqui</string>
+    <string name="register_here">Registre-se aqui!</string>
+    <string name="no_account">Não tem uma conta?</string>
+    <string name="forgot_password">Esqueceste-te da palavra-passe?</string>
+    <string name="login">Entrar</string>
+
+    <!-- Dashboard -->
+    <string name="active_breakdowns">Avarias Ativas</string>
+    <string name="no_active_breakdowns">Nenhuma avaria ativa encontrada</string>
+    <string name="report_breakdown">Reportar uma avaria</string>
+    <string name="view_assignments">Ver Atribuições</string>
+
+    <!-- Breakdown Reporting -->
+    <string name="breakdown_info">Informação sobre a Avaria</string>
+    <string name="problem_description">Descrição do Problema</string>
+    <string name="describe_problem">Descreva o problema em detalhes</string>
+    <string name="location">Localização</string>
+    <string name="select_urgency">Selecione o nível de urgência</string>
+    <string name="confirm_information">Confirmo que estas informações estão corretas</string>
+    <string name="report">Report Breakdown</string>
+
+    <!-- Notifications -->
+    <string name="no_notifications">Nenhuma notificação nova</string>
+    <string name="mark_all_read">Marcar todas como lidas</string>
+    <string name="delete_all">Apagar todas as notificações</string>
+    <string name="delete_all_confirmation">Apagar todas as notificações?</string>
+
+    <!-- Admin -->
+    <string name="users">Usuários</string>
+    <string name="equipment">Equipamentos</string>
+    <string name="breakdowns">Avarias</string>
+    <string name="assignments">Atribuições</string>
+    <string name="recent_breakdowns">Avarias Recentes</string>
+    <string name="no_recent_breakdowns">Nenhuma avaria recente</string>
+
+    <!-- Common Status -->
+    <string name="status_open">Aberto</string>
+    <string name="status_in_progress">Em Progresso</string>
+    <string name="status_completed">Concluído</string>
+    <string name="status_pending">Pendente</string>
+    <string name="status_active">Ativo</string>
+    <string name="status_inactive">Inativo</string>
+
+    <string name="language">Idioma</string>
+    <string name="choose_language">Escolha o seu idioma</string>
+    <string name="english">Inglês</string>
+    <string name="portuguese">Português</string>
 </resources>

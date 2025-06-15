@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -35,7 +36,6 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
 
-    // Show loading screen during initial auth check
     if (authState.isLoading) {
         Box(
             modifier = Modifier
@@ -48,18 +48,14 @@ fun LoginScreen(
         return
     }
 
-    // Navigate to main app when login is successful
     LaunchedEffect(authState.isLoggedIn) {
         if (authState.isLoggedIn) {
             onLoginSuccess()
         }
     }
 
-    // Show error if any
     authState.error?.let { error ->
         LaunchedEffect(error) {
-            // You can show a snackbar or toast here
-            // For now, it will just be displayed as text
         }
     }
 
@@ -77,14 +73,13 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(48.dp))
 
         Text(
-            text = "Login",
+            text = stringResource(R.string.login),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Error display
         authState.error?.let { error ->
             Card(
                 modifier = Modifier
@@ -112,7 +107,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            placeholder = { Text("Insert your email here") },
+            placeholder = { Text(text = stringResource(R.string.insert_email)) },
             enabled = !authState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
@@ -137,7 +132,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Insert your password here") },
+            placeholder = { Text(text = stringResource(R.string.insert_password)) },
             enabled = !authState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
@@ -163,7 +158,7 @@ fun LoginScreen(
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(
-                text = "Forgot your password?",
+                text = stringResource(R.string.forgot_password),
                 color = WeFixItBlue
             )
         }
@@ -193,7 +188,7 @@ fun LoginScreen(
                 )
             } else {
                 Text(
-                    text = "Login",
+                    text = stringResource(R.string.login),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -207,7 +202,7 @@ fun LoginScreen(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Don't have an account? "
+                text = stringResource(R.string.no_account)
             )
             TextButton(
                 onClick = {

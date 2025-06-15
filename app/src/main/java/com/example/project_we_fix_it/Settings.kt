@@ -1,5 +1,6 @@
 package com.example.project_we_fix_it
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -17,6 +18,10 @@ import com.example.project_we_fix_it.nav.CommonScreenActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +30,34 @@ fun SettingsScreen(
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     var isDarkThemeEnabled by remember { mutableStateOf(false) }
+    var showLanguageDropdown by remember { mutableStateOf(false) }
+    val configuration = LocalConfiguration.current
+    val context = LocalContext.current
+    val resources = LocalContext.current.resources
+
+    val currentLanguage = remember {
+        mutableStateOf(
+            if (configuration.locale.language == "pt") "Português" else "English"
+        )
+    }
+
+    // Função para mudar o idioma
+    fun changeLanguage(language: String) {
+        val locale = when (language) {
+            "Português" -> Locale("pt")
+            "Português" -> Locale("pt")
+            else -> Locale("en")
+        }
+
+        Locale.setDefault(locale)
+        val config = Configuration(configuration)
+        config.setLocale(locale)
+        context.createConfigurationContext(config)
+        resources.updateConfiguration(config, resources.displayMetrics)
+
+        currentLanguage.value = language
+        showLanguageDropdown = false
+    }
 
     WeFixItAppScaffold(
         title = "Settings",
@@ -58,12 +91,48 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                SettingsItem(
-                    title = "Language",
-                    description = "Choose your language",
-                    showArrow = true,
-                    onClick = { /* Open language selection */ }
-                )
+                Box(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.clickable { showLanguageDropdown = true }
+                    ) {
+                        Text(
+                            text = stringResource(R.string.language),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = stringResource(R.string.choose_language),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = currentLanguage.value,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showLanguageDropdown,
+                        onDismissRequest = { showLanguageDropdown = false },
+                        modifier = Modifier.fillMaxWidth(fraction = 0.8f)
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.english)) },
+                            onClick = {
+                                changeLanguage("English")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.portuguese)) },
+                            onClick = {
+                                changeLanguage("Português")
+                            }
+                        )
+                    }
+                }
 
                 HorizontalDivider(
                     thickness = 1.dp,

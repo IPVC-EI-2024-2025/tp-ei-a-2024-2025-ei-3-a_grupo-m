@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,25 +93,25 @@ fun BreakdownReportingScreen(
                 }
 
                 Text(
-                    text = "Breakdown Information",
+                    text = stringResource(R.string.breakdown_info),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Problem Description *") },
+                    label = { Text(text = stringResource(R.string.problem_description))},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
                     maxLines = 5,
-                    supportingText = { Text("Describe the problem in detail") }
+                    supportingText = { Text(text = stringResource(R.string.describe_problem))}
                 )
 
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    label = { Text("Location") },
+                    label = { Text(text = stringResource(R.string.location))},
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -123,7 +124,7 @@ fun BreakdownReportingScreen(
                         Text(urgency)
                         Icon(
                             Icons.Default.ArrowDropDown,
-                            contentDescription = "Select urgency level"
+                            contentDescription = stringResource(R.string.select_urgency)
                         )
                     }
                     DropdownMenu(
@@ -150,7 +151,7 @@ fun BreakdownReportingScreen(
                         checked = termsAccepted,
                         onCheckedChange = { termsAccepted = it }
                     )
-                    Text("I confirm this information is accurate")
+                    Text(text = stringResource(R.string.confirm_information))
                 }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -166,7 +167,7 @@ fun BreakdownReportingScreen(
                     },
                     enabled = termsAccepted && description.isNotBlank()
                 ) {
-                    Text("Report Breakdown")
+                    Text(text = stringResource(R.string.report_breakdown))
                 }
             }
         }

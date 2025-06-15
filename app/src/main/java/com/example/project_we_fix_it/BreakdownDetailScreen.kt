@@ -34,7 +34,6 @@ fun BreakdownDetailsScreen(
     chatViewModel: ChatViewModel = hiltViewModel(),
     breakdownViewModel: BreakdownViewModel = hiltViewModel()
 ) {
-    // Load breakdown details when screen is first displayed
     LaunchedEffect(breakdownId) {
         breakdownViewModel.loadBreakdownDetails(breakdownId)
     }
@@ -43,7 +42,6 @@ fun BreakdownDetailsScreen(
     val isLoading by breakdownViewModel.isLoading.collectAsState()
     val createdChatId by chatViewModel.createdChatId.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
-    // show text logic
 
     if (showDialog) {
         AlertDialog(
