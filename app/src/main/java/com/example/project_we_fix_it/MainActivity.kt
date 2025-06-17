@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -28,11 +30,16 @@ import com.example.project_we_fix_it.adminViews.AssignmentManagementScreen
 import com.example.project_we_fix_it.adminViews.BreakdownManagementScreen
 import com.example.project_we_fix_it.adminViews.EquipmentManagementScreen
 import com.example.project_we_fix_it.adminViews.UserManagementScreen
+import com.example.project_we_fix_it.supabase.SupabaseClient
+import org.xml.sax.ErrorHandler
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        }
         super.onCreate(savedInstanceState)
         setContent {
             ProjectWeFixItTheme {
@@ -50,12 +57,38 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavigation(
-    authViewModel: AuthViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val navigator = remember { AppNavigator(navController) }
     val authState by authViewModel.authState.collectAsState()
-    val isAdmin = authState.userProfile?.role == "admin"
+    val isAdmin by remember(authState.userProfile) {
+        derivedStateOf { authState.userProfile?.role == "admin" }
+    }
+
+    LaunchedEffect(authState.isLoggedIn) {
+        if (authState.isLoggedIn) {
+            navController.popBackStack(navController.graph.startDestinationId, false)
+
+            if (isAdmin) {
+                navController.navigate(Routes.ADMIN_DASHBOARD) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            } else {
+                navController.navigate(Routes.DASHBOARD) {
+                    popUpTo(Routes.LOGIN) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        } else {
+            navController.navigate(Routes.LOGIN) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
+
 
     NavHost(navController = navController, startDestination = Routes.LOGIN) {
         // Common routes available to all users

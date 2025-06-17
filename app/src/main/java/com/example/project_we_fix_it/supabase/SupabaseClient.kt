@@ -35,8 +35,15 @@ object SupabaseClient {
             }
             Log.d("SupabaseClient", "Storage bucket initialized")
         } catch (e: Exception) {
-            // Bucket likely already exists
             Log.d("SupabaseClient", "Bucket initialization: ${e.message}")
+        }
+    }
+
+    suspend fun cleanup() = withContext(Dispatchers.IO) {
+        try {
+            supabase.close()
+        } catch (e: Exception) {
+            Log.e("SupabaseClient", "Error during cleanup", e)
         }
     }
 }

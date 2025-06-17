@@ -7,12 +7,15 @@ import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.user.UserInfo
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.minutes
 
 
 data class AuthState(
@@ -28,7 +31,6 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
     private val TAG = "AuthVM"
-    // Initialize with loading state
     private val _authState = MutableStateFlow(AuthState(isLoading = true))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
@@ -37,8 +39,28 @@ class AuthViewModel @Inject constructor(
 
     private val supabaseRepository = SupabaseRepository()
 
+    private val sessionCheckInterval = 5.minutes
+    private var sessionCheckJob: Job? = null
+
     init {
         checkAuthStatus()
+        startSessionChecker()
+    }
+
+    private fun startSessionChecker() {
+        sessionCheckJob?.cancel()
+        sessionCheckJob = viewModelScope.launch {
+            while (true) {
+                delay(sessionCheckInterval)
+                checkAuthStatus()
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        sessionCheckJob?.cancel()
+        _authState.value = AuthState()
     }
 
     private fun checkAuthStatus() {
@@ -46,13 +68,18 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                authRepository.loadSession()
+                val sessionResult = authRepository.loadSession()
+                if (sessionResult.isFailure) {
+                    throw sessionResult.exceptionOrNull() ?: Exception("Session load failed")
+                }
 
                 if (authRepository.isUserLoggedIn()) {
-                    authRepository.refreshSession().fold(
-                        onSuccess = { /* Session refreshed */ },
+                    val refreshResult = authRepository.refreshSession()
+                    refreshResult.fold(
+                        onSuccess = {},
                         onFailure = {
                             authRepository.logout()
+                            throw it
                         }
                     )
                 }
@@ -73,6 +100,8 @@ class AuthViewModel @Inject constructor(
                     isLoggedIn = false,
                     error = "Session error: ${e.message}"
                 )
+                // Force logout to clear any invalid state
+                authRepository.logout()
             }
         }
     }
@@ -163,19 +192,30 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true)
-
-            val result = authRepository.logout()
-            result.fold(
-                onSuccess = {
-                    _authState.value = AuthState(isLoggedIn = false)
-                },
-                onFailure = { exception ->
-                    _authState.value = _authState.value.copy(
-                        isLoading = false,
-                        error = exception.message
-                    )
-                }
-            )
+            try {
+                authRepository.logout().fold(
+                    onSuccess = {
+                        _authState.value = AuthState(
+                            isLoading = false,
+                            isLoggedIn = false,
+                            user = null,
+                            userProfile = null,
+                            error = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        _authState.value = _authState.value.copy(
+                            isLoading = false,
+                            error = exception.message
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _authState.value = _authState.value.copy(
+                    isLoading = false,
+                    error = e.message
+                )
+            }
         }
     }
 
