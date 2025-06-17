@@ -65,83 +65,103 @@ fun AdminDashboardScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                DashboardCard(
-                    icon = Icons.Default.People,
-                    title = stringResource(R.string.users),
-                    count = users.size,
-                    onClick = { commonActions.navController.navigate("admin/users") }
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                DashboardCard(
-                    icon = Icons.Default.Build,
-                    title = stringResource(R.string.equipment),
-                    count = equipment.size,
-                    onClick = { commonActions.navController.navigate("admin/equipment") }
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    DashboardCard(
+                        icon = Icons.Default.People,
+                        title = stringResource(R.string.users),
+                        count = users.size,
+                        onClick = { commonActions.navController.navigate("admin/users") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    DashboardCard(
+                        icon = Icons.Default.Build,
+                        title = stringResource(R.string.equipment),
+                        count = equipment.size,
+                        onClick = { commonActions.navController.navigate("admin/equipment") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    DashboardCard(
+                        icon = Icons.Default.Warning,
+                        title = stringResource(R.string.breakdowns),
+                        count = breakdowns.size,
+                        onClick = { commonActions.navController.navigate("admin/breakdowns") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    DashboardCard(
+                        icon = Icons.Default.Task,
+                        title = stringResource(R.string.assignments),
+                        count = 0,
+                        onClick = { commonActions.navController.navigate("admin/assignments") },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                DashboardCard(
-                    icon = Icons.Default.Warning,
-                    title = stringResource(R.string.breakdowns),
-                    count = breakdowns.size,
-                    onClick = { commonActions.navController.navigate("admin/breakdowns") }
+                Text(
+                    text = stringResource(R.string.recent_breakdowns),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
-                DashboardCard(
-                    icon = Icons.Default.Task,
-                    title = stringResource(R.string.assignments),
-                    count = 0, // You might want to add assignments count to your view model
-                    onClick = { commonActions.navController.navigate("admin/assignments") }
-                )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Recent Breakdowns
-            Text(
-                text = stringResource(R.string.recent_breakdowns),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            if (breakdowns.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = stringResource(R.string.no_recent_breakdowns))
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                ) {
-                    items(breakdowns.take(5)) { breakdown ->
-                        ListItem(
-                            headlineContent = { Text(breakdown.description) },
-                            supportingContent = { Text("Status: ${breakdown.status}") },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = Icons.Default.Warning,
-                                    contentDescription = stringResource(R.string.breakdowns)
-                                )
-                            }
+                if (breakdowns.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = stringResource(R.string.no_recent_breakdowns))
+                    }
+                } else {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         )
-                        HorizontalDivider()
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                        ) {
+                            items(breakdowns.take(5)) { breakdown ->
+                                ListItem(
+                                    headlineContent = { Text(text = breakdown.description) },
+                                    supportingContent = { Text(text = "Status: ${breakdown.status}") },
+                                    leadingContent = {
+                                        Icon(
+                                            imageVector = Icons.Default.Warning,
+                                            contentDescription = stringResource(R.string.breakdowns)
+                                        )
+                                    },
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                )
+                                if (breakdown != breakdowns.take(5).last()) {
+                                    Divider()
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -154,34 +174,38 @@ fun DashboardCard(
     icon: ImageVector,
     title: String,
     count: Int,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold
+                modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
                 text = count.toString(),
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
         }
