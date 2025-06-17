@@ -24,7 +24,6 @@ fun WeFixItNavigationDrawer(
     onAdminAssignmentsClick: () -> Unit = {},
     onHomeClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onMyBreakdownsClick: () -> Unit,
     onNotificationsClick: () -> Unit,
     onAssignmentsClick: () -> Unit,
     onSettingsClick: () -> Unit,

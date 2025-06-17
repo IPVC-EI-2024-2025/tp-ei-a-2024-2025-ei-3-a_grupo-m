@@ -111,10 +111,6 @@ fun WeFixItAppScaffold(
                         scope.launch { drawerState.close() }
                         onNavigateToProfile()
                     },
-                    onMyBreakdownsClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("my_breakdowns")
-                    },
                     onNotificationsClick = {
                         scope.launch { drawerState.close() }
                         onNavigateToNotifications()

@@ -9,8 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
@@ -166,10 +168,11 @@ fun EditProfileScreen(
     ) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color.White),
-            horizontalAlignment = Alignment.CenterHorizontally
+        .fillMaxSize()
+        .padding(padding)
+        .background(Color.White)
+        .verticalScroll(rememberScrollState()),
+    horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isLoading) {
                 Box(
@@ -324,7 +327,8 @@ fun EditProfileScreen(
                         onClick = { saveProfile() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(50.dp)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF5C5CFF)
@@ -336,6 +340,7 @@ fun EditProfileScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
