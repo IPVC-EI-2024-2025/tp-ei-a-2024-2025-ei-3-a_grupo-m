@@ -10,19 +10,14 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.launch
 
 @HiltAndroidApp
-class MyApplication : Application() {
+class MyApplication : Application(){
     override fun onCreate() {
         super.onCreate()
 
-        ProcessLifecycleOwner.get().lifecycleScope.launch {
-            SupabaseClient.initializeStorage()
-        }
-
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
-            override fun onStop(owner: LifecycleOwner) {
-                super.onStop(owner)
-                ProcessLifecycleOwner.get().lifecycleScope.launch {
-                    SupabaseClient.cleanup()
+            override fun onCreate(owner: LifecycleOwner) {
+                owner.lifecycleScope.launch {
+                    SupabaseClient.initializeStorage()
                 }
             }
         })

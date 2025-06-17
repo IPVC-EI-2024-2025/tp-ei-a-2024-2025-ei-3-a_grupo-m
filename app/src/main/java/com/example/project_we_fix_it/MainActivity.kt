@@ -220,9 +220,7 @@ fun AppNavigation(
                 commonActions = navigator.getCommonActions(showBackButton = true),
                 onBreakdownClick = { breakdownId ->
                     navigator.navigateToBreakdownDetails(breakdownId)
-                },
-                authViewModel = hiltViewModel(),
-                assignmentViewModel = hiltViewModel()
+                }
             )
         }
         composable(Routes.MY_BREAKDOWNS) {

@@ -25,8 +25,6 @@ object SupabaseClient {
             autoLoadFromStorage = true
         }
     }
-
-    // Initialize the storage bucket (call this once at app startup)
     suspend fun initializeStorage() = withContext(Dispatchers.IO) {
         try {
             supabase.storage.createBucket(BUCKET_NAME){
@@ -39,11 +37,4 @@ object SupabaseClient {
         }
     }
 
-    suspend fun cleanup() = withContext(Dispatchers.IO) {
-        try {
-            supabase.close()
-        } catch (e: Exception) {
-            Log.e("SupabaseClient", "Error during cleanup", e)
-        }
-    }
 }

@@ -20,6 +20,7 @@ import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.*
 import com.example.project_we_fix_it.nav.AppNavigator
 import com.example.project_we_fix_it.nav.CommonScreenActions
+import com.example.project_we_fix_it.nav.Routes
 import com.example.project_we_fix_it.viewModels.AssignmentViewModel
 
 @Composable
@@ -145,6 +146,25 @@ fun MyAssignmentsScreen(
 
     val activelyWorkingOn by assignmentViewModel.activelyWorkingOn.collectAsState()
 
+    LaunchedEffect(currentUserId) {
+        currentUserId?.let { userId ->
+            Log.d("AssignmentsScreen", "Initial load of assignments")
+            assignmentViewModel.loadAssignments(userId)
+        }
+    }
+
+    val navController = commonActions.navController
+    val currentBackStackEntry by navController.currentBackStackEntryFlow.collectAsState(null)
+
+    LaunchedEffect(currentBackStackEntry) {
+        if (currentBackStackEntry?.destination?.route == Routes.ASSIGNMENTS) {
+            currentUserId?.let { userId ->
+                Log.d("AssignmentsScreen", "Reloading assignments on return")
+                assignmentViewModel.refreshAssignments(userId)
+            }
+        }
+    }
+
     showStartWorkingDialog?.let { breakdownId ->
         AlertDialog(
             onDismissRequest = { showStartWorkingDialog = null },
@@ -204,17 +224,17 @@ fun MyAssignmentsScreen(
             assignmentViewModel.workingOnBreakdowns.value
                 .filter { breakdown -> breakdown.status != "completed" }
                 .map { breakdown ->
-                BreakdownItem(
-                    id = breakdown.breakdown_id ?: "",
-                    title = breakdown.description.take(30),
-                    description = breakdown.description,
-                    priority = when (breakdown.urgency_level) {
-                        "critical" -> 3
-                        "high" -> 2
-                        else -> 1
-                    }
-                )
-            }
+                    BreakdownItem(
+                        id = breakdown.breakdown_id ?: "",
+                        title = breakdown.description.take(30),
+                        description = breakdown.description,
+                        priority = when (breakdown.urgency_level) {
+                            "critical" -> 3
+                            "high" -> 2
+                            else -> 1
+                        }
+                    )
+                }
         }
     }
 
@@ -235,12 +255,6 @@ fun MyAssignmentsScreen(
             }
     }
 
-    LaunchedEffect(currentUserId) {
-        currentUserId?.let { userId ->
-            assignmentViewModel.loadAssignments(userId)
-        }
-    }
-
     if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -254,8 +268,6 @@ fun MyAssignmentsScreen(
         }
         return
     }
-
-
 
     WeFixItAppScaffold(
         title = stringResource(R.string.assignments),
@@ -329,11 +341,3 @@ fun MyAssignmentsScreen(
         }
     }
 }
-
-
-
-
-
-
-
-

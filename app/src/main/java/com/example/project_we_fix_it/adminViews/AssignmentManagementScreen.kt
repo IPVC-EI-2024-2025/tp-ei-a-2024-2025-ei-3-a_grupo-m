@@ -146,6 +146,10 @@ fun AssignmentItem(
     val breakdown = breakdowns.find { it.breakdown_id == assignment.breakdown_id }
     val technician = users.find { it.user_id == assignment.technician_id }
 
+    if (assignment.status == "completed") {
+        return
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -207,6 +211,8 @@ fun AssignmentEditDialog(
     var breakdownExpanded by remember { mutableStateOf(false) }
     var technicianExpanded by remember { mutableStateOf(false) }
     var statusExpanded by remember { mutableStateOf(false) }
+
+    val statusOptions = listOf("active", "inactive", "completed")
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -306,7 +312,7 @@ fun AssignmentEditDialog(
                         expanded = statusExpanded,
                         onDismissRequest = { statusExpanded = false }
                     ) {
-                        listOf("active", "inactive").forEach { selectionOption ->
+                        statusOptions.forEach { selectionOption ->
                             DropdownMenuItem(
                                 text = { Text(selectionOption) },
                                 onClick = {

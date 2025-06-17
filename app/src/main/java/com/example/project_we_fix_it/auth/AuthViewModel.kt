@@ -7,15 +7,12 @@ import com.example.project_we_fix_it.supabase.SupabaseRepository
 import com.example.project_we_fix_it.supabase.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.auth.user.UserInfo
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.minutes
 
 
 data class AuthState(
@@ -30,56 +27,32 @@ data class AuthState(
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    private val TAG = "AuthVM"
+    
     private val _authState = MutableStateFlow(AuthState(isLoading = true))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+    init {
+        checkAuthStatus()
+    }
 
     val currentUserId: String?
         get() = authState.value.user?.id
 
     private val supabaseRepository = SupabaseRepository()
 
-    private val sessionCheckInterval = 5.minutes
-    private var sessionCheckJob: Job? = null
-
-    init {
-        checkAuthStatus()
-        startSessionChecker()
-    }
-
-    private fun startSessionChecker() {
-        sessionCheckJob?.cancel()
-        sessionCheckJob = viewModelScope.launch {
-            while (true) {
-                delay(sessionCheckInterval)
-                checkAuthStatus()
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        sessionCheckJob?.cancel()
-        _authState.value = AuthState()
-    }
-
     private fun checkAuthStatus() {
         _authState.value = AuthState(isLoading = true)
 
         viewModelScope.launch {
             try {
-                val sessionResult = authRepository.loadSession()
-                if (sessionResult.isFailure) {
-                    throw sessionResult.exceptionOrNull() ?: Exception("Session load failed")
-                }
+                authRepository.loadSession()
 
                 if (authRepository.isUserLoggedIn()) {
-                    val refreshResult = authRepository.refreshSession()
-                    refreshResult.fold(
+                    authRepository.refreshSession().fold(
                         onSuccess = {},
                         onFailure = {
                             authRepository.logout()
-                            throw it
+                            _authState.value = AuthState(isLoading = false, isLoggedIn = false)
+                            return@launch
                         }
                     )
                 }
@@ -100,11 +73,10 @@ class AuthViewModel @Inject constructor(
                     isLoggedIn = false,
                     error = "Session error: ${e.message}"
                 )
-                // Force logout to clear any invalid state
-                authRepository.logout()
             }
         }
     }
+
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
@@ -192,51 +164,45 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _authState.value = _authState.value.copy(isLoading = true)
+
             try {
-                authRepository.logout().fold(
-                    onSuccess = {
-                        _authState.value = AuthState(
-                            isLoading = false,
-                            isLoggedIn = false,
-                            user = null,
-                            userProfile = null,
-                            error = null
-                        )
-                    },
-                    onFailure = { exception ->
-                        _authState.value = _authState.value.copy(
-                            isLoading = false,
-                            error = exception.message
-                        )
-                    }
+                authRepository.logout()
+                //reset
+                _authState.value = AuthState(
+                    isLoading = false,
+                    isLoggedIn = false,
+                    user = null,
+                    userProfile = null,
+                    error = null
                 )
             } catch (e: Exception) {
                 _authState.value = _authState.value.copy(
                     isLoading = false,
-                    error = e.message
+                    error = "Logout failed: ${e.message}"
                 )
             }
         }
     }
 
+
     fun loadUserProfile() {
-        Log.d(TAG, "loadUserProfile() called")
+        Log.d("AuthVM", "loadUserProfile() called")
         viewModelScope.launch {
             try {
                 _authState.value.user?.id?.let { userId ->
-                    Log.d(TAG, "Loading profile for user: $userId")
+                    Log.d("AuthVM", "Loading profile for user: $userId")
                     val profile = supabaseRepository.getUserProfile(userId)
-                    Log.d(TAG, "Profile loaded: ${profile?.name}")
+                    Log.d("AuthVM", "Profile loaded: ${profile?.name}")
 
                     _authState.update { currentState ->
                         currentState.copy(userProfile = profile)
                     }
-                    Log.d(TAG, "AuthState updated with new profile")
+                    Log.d("AuthVM", "AuthState updated with new profile")
                 } ?: run {
-                    Log.w(TAG, "No user ID available to load profile")
+                    Log.w("AuthVM", "No user ID available to load profile")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error loading profile: ${e.stackTraceToString()}")
+                Log.e("AuthVM", "Error loading profile: ${e.stackTraceToString()}")
             }
         }
     }

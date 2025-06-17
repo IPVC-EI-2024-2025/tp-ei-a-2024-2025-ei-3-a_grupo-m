@@ -1,5 +1,7 @@
 package com.example.project_we_fix_it
 
+import android.app.Activity
+import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -29,7 +31,6 @@ fun SettingsScreen(
     commonActions: CommonScreenActions,
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    var isDarkThemeEnabled by remember { mutableStateOf(false) }
     var showLanguageDropdown by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val context = LocalContext.current
@@ -169,36 +170,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Column {
-                        Text(
-                            text = stringResource(R.string.dark_mode),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = stringResource(R.string.enable_dark_mode),
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-
-                    Switch(
-                        checked = isDarkThemeEnabled,
-                        onCheckedChange = { isDarkThemeEnabled = it },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    )
                 }
-
-                HorizontalDivider(
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

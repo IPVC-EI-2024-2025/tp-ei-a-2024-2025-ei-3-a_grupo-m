@@ -905,7 +905,7 @@ fun BreakdownCreateDialog(
                 onClick = {
                     if (selectedEquipmentId.isNotBlank() && description.isNotBlank()) {
                         val newBreakdown = Breakdown(
-                            breakdown_id = null, // handled by supabase
+                            breakdown_id = null,
                             equipment_id = selectedEquipmentId,
                             urgency_level = urgency,
                             location = location.ifEmpty { null },

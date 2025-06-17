@@ -35,6 +35,14 @@ class AssignmentViewModel @Inject constructor(
     private val _activelyWorkingOn = MutableStateFlow<Set<String>>(emptySet())
     val activelyWorkingOn: StateFlow<Set<String>> = _activelyWorkingOn.asStateFlow()
 
+    override fun onCleared() {
+        super.onCleared()
+        _assignments.value = emptyList()
+        _workingOnBreakdowns.value = emptyList()
+        _assignedBreakdowns.value = emptyList()
+        _activelyWorkingOn.value = emptySet()
+    }
+
     fun loadAssignments(technicianId: String) {
         _isLoading.value = true
         _errorMessage.value = ""
@@ -42,16 +50,18 @@ class AssignmentViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                Log.d("AssignmentViewModel", "Fetching assignments from repository...")
+                _assignments.value = emptyList()
+                _workingOnBreakdowns.value = emptyList()
+                _assignedBreakdowns.value = emptyList()
+
                 val assignments = supabaseRepository.getAssignmentsByTechnician(technicianId)
                     .filter { it.status != "completed" }
-                Log.d("AssignmentViewModel", "Raw assignments received: ${assignments.size} items")
+
                 assignments.forEach { assignment ->
                     Log.d("AssignmentViewModel", "Assignment: $assignment")
                 }
 
                 val allAssignments = supabaseRepository.getAllAssignmentsDebug()
-                Log.d("AssignmentViewModel", "All assignments received: ${allAssignments.size} items")
                 allAssignments.forEach { assignment ->
                     Log.d("AssignmentViewModel", "All Assignment: $assignment")
                 }
@@ -166,6 +176,13 @@ class AssignmentViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun refreshAssignments(technicianId: String) {
+        _assignments.value = emptyList()
+        _workingOnBreakdowns.value = emptyList()
+        _assignedBreakdowns.value = emptyList()
+        loadAssignments(technicianId)
     }
 
 }

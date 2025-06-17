@@ -1,12 +1,12 @@
 package com.example.project_we_fix_it
 
 import android.util.Log
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,12 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.project_we_fix_it.auth.AuthViewModel
-import com.example.project_we_fix_it.ui.theme.WeFixItGrey
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
-import com.example.project_we_fix_it.supabase.toBreakdownItem
 import com.example.project_we_fix_it.viewModels.MyBreakdownsViewModel
 import android.R as AndroidR
 
@@ -34,11 +32,12 @@ fun MyBreakdownsScreen(
     viewModel: MyBreakdownsViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
-    val breakdowns by viewModel.myBreakdowns.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val breakdowns by viewModel.myBreakdowns.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+
     LaunchedEffect(key1 = Unit) {
-        Log.d("MyBreakdownsScreen", "Loading breakdowns from:")
+        Log.d("MyBreakdownsScreen", "Loading user's breakdowns")
         viewModel.loadMyBreakdowns()
     }
 
@@ -51,7 +50,6 @@ fun MyBreakdownsScreen(
         }
         return
     }
-
 
     WeFixItAppScaffold(
         title = stringResource(R.string.my_breakdowns),
@@ -75,7 +73,7 @@ fun MyBreakdownsScreen(
         onBackClick = commonActions.onBackClick,
         notificationViewModel = hiltViewModel(),
         actions = {
-            IconButton(onClick = { /* Handle filter action */ }) {
+            IconButton(onClick = {}) {
                 Icon(
                     painter = painterResource(id = AndroidR.drawable.ic_menu_sort_by_size),
                     contentDescription = "Filter"
@@ -83,10 +81,11 @@ fun MyBreakdownsScreen(
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(16.dp)
         ) {
             if (isLoading) {
                 Box(
@@ -103,91 +102,118 @@ fun MyBreakdownsScreen(
                     Text("No breakdowns reported by you")
                 }
             } else {
-                Column(
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = "List of my breakdowns (${breakdowns.size})",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(vertical = 16.dp)
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        items(breakdowns) { breakdown ->
-                            MyBreakdownCard(
-                                breakdown = breakdown.toBreakdownItem(),
-                                onClick = { breakdown.breakdown_id?.let { onBreakdownClick(it) } }
+                        Text(
+                            text = "Your Breakdowns",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Total: ${breakdowns.size}",
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Open: ${breakdowns.count { it.status == "open" }}",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "In Progress: ${breakdowns.count { it.status == "in_progress" }}",
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = "Resolved: ${breakdowns.count { it.status == "resolved" }}",
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Your Recent Breakdowns",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                    ) {
+                        items(breakdowns.take(5)) { breakdown ->
+                            ListItem(
+                                headlineContent = {
+                                    Text(
+                                        text = breakdown.equipment_id ?: "Breakdown",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                },
+                                supportingContent = {
+                                    Column {
+                                        Text(text = breakdown.description.take(50) + "...")
+                                        Text(
+                                            text = "Status: ${breakdown.status}",
+                                            color = when (breakdown.status?.lowercase()) {
+                                                "open" -> Color.Red
+                                                "in_progress" -> Color(0xFFFFA500) // Orange
+                                                "resolved" -> Color.Green
+                                                else -> Color.Gray
+                                            }
+                                        )
+                                    }
+                                },
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.Warning,
+                                        contentDescription = "Breakdown",
+                                        tint = when (breakdown.status?.lowercase()) {
+                                            "open" -> Color.Red
+                                            "in_progress" -> Color(0xFFFFA500) // Orange
+                                            "resolved" -> Color.Green
+                                            else -> Color.Gray
+                                        }
+                                    )
+                                },
+                                modifier = Modifier
+                                    .clickable {
+                                        breakdown.breakdown_id?.let { onBreakdownClick(it) }
+                                    }
+                                    .padding(horizontal = 8.dp)
                             )
+                            if (breakdown != breakdowns.take(5).last()) {
+                                Divider()
+                            }
                         }
                     }
                 }
-            }
-        }
-    }
-}
 
+                Spacer(modifier = Modifier.height(16.dp))
 
-@Composable
-fun MyBreakdownCard(
-    breakdown: BreakdownItem,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = WeFixItGrey
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = breakdown.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = breakdown.description,
-                    fontSize = 14.sp,
-                    color = Color.DarkGray,
-                    maxLines = 2
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = "Pending",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color.Red)
-                )
+                if (breakdowns.size > 5) {
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("View All (${breakdowns.size})")
+                    }
+                }
             }
         }
     }

@@ -178,7 +178,6 @@ class AuthRepository @Inject constructor() {
     suspend fun adminUpdateUserEmail(userId: String, newEmail: String): Result<Unit> = withContext(Dispatchers.IO) {
         Log.d("AuthRepository", "Admin updating email for userId: $userId to: $newEmail")
         try {
-            // Call the database function that checks admin privileges
             val response = client.postgrest.rpc("admin_update_user_email", buildJsonObject {
                 put("target_user_id", userId)
                 put("new_email", newEmail)
@@ -214,12 +213,10 @@ class AuthRepository @Inject constructor() {
                     onSuccess = { Log.d("AuthRepository", "Email updated successfully") },
                     onFailure = {
                         Log.w("AuthRepository", "Email update failed: ${it.message}")
-                        // Continue with profile update even if email update fails
                     }
                 )
             }
 
-            // Update profile data in user_profiles table
             client.from("user_profiles")
                 .update({
                     set("name", profile.name)
@@ -231,7 +228,6 @@ class AuthRepository @Inject constructor() {
                     filter { eq("user_id", profile.user_id) }
                 }
 
-            // Return updated profile
             val updated = client.from("user_profiles")
                 .select { filter { eq("user_id", profile.user_id) } }
                 .decodeSingle<UserProfile>()
@@ -243,12 +239,15 @@ class AuthRepository @Inject constructor() {
             Result.failure(Exception("Profile update failed: ${e.message}"))
         }
     }
-    // Logout
+
+
     suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
+
         try {
             client.auth.signOut()
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.d("AuthRepo", "Request auth logout")
             Result.failure(Exception("Logout failed: ${e.message}"))
         }
     }
