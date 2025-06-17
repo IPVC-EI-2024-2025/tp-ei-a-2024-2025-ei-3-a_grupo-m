@@ -219,7 +219,6 @@ fun EquipmentEditDialog(
                     label = { Text("Location") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                // Status dropdown for better UX
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = expanded,

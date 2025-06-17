@@ -4,7 +4,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,7 +13,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -34,11 +32,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.project_we_fix_it.auth.AuthViewModel
+import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
 import com.example.project_we_fix_it.supabase.UserProfile
 import com.example.project_we_fix_it.viewModels.UserProfileViewModel
 import kotlinx.coroutines.launch
 import android.R as AndroidR
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -52,15 +52,14 @@ fun EditProfileScreen(
     profileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val TAG = "EditProfileScreen"
+    val coroutineScope = rememberCoroutineScope()
 
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val profileState by profileViewModel.profileState.collectAsStateWithLifecycle()
     val isLoading by profileViewModel.isLoading.collectAsStateWithLifecycle()
     val currentProfile = profileState ?: authState.userProfile
     val user = authState.user
-    val coroutineScope = rememberCoroutineScope()
 
-    // Initialize fields with actual user data or empty strings
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
@@ -68,7 +67,6 @@ fun EditProfileScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var speciality by remember { mutableStateOf("") }
     var block by remember { mutableStateOf("") }
-
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
     var showSaveSuccess by remember { mutableStateOf(false) }
 
@@ -86,43 +84,25 @@ fun EditProfileScreen(
         block = currentProfile?.location ?: ""
     }
 
-
     fun saveProfile() {
-        Log.d(TAG, "saveProfile() called")
-        val updatedProfile = currentProfile?.copy(
-            name = name,
-            phone = phoneNumber,
-            role = speciality,
-            location = block
-        ) ?: UserProfile(
-            user_id = user?.id ?: "",
-            name = name,
-            phone = phoneNumber,
-            role = speciality,
-            location = block,
-            status = currentProfile?.status ?: "active"
-        )
-
-        Log.d(TAG, "Updating profile with: $updatedProfile")
-        profileViewModel.updateProfile(updatedProfile)
-
         coroutineScope.launch {
-            Log.d(TAG, "Refreshing auth state...")
+            val updatedProfile = currentProfile?.copy(
+                name = name,
+                phone = phoneNumber,
+                role = speciality,
+                location = block
+            ) ?: UserProfile(
+                user_id = user?.id ?: "",
+                name = name,
+                phone = phoneNumber,
+                role = speciality,
+                location = block,
+                status = currentProfile?.status ?: "active"
+            )
+
+            profileViewModel.updateProfile(updatedProfile)
             authViewModel.loadUserProfile()
-        }
-        showSaveSuccess = true
-        Log.d(TAG, "Profile update flow completed")
-    }
-
-
-    if (isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White.copy(alpha = 0.8f)),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color(0xFF5C5CFF))
+            showSaveSuccess = true
         }
     }
 
@@ -140,8 +120,6 @@ fun EditProfileScreen(
             }
         )
     }
-
-
 
     if (showSaveSuccess) {
         AlertDialog(
@@ -164,72 +142,27 @@ fun EditProfileScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.edit_profile),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
-                )
-            )
-        },
-        bottomBar = {
-            BottomAppBar(
-                containerColor = Color.White,
-                contentColor = Color.Black,
-                tonalElevation = 8.dp
-            ) {
-                NavigationBar(
-                    containerColor = Color.White,
-                    contentColor = Color.Black
-                ) {
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_menu_myplaces),
-                                contentDescription = "Profile"
-                            )
-                        },
-                        label = { Text(stringResource(R.string.profile)) },
-                        selected = true,
-                        onClick = onNavigateToProfile
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_menu_agenda),
-                                contentDescription = "Home"
-                            )
-                        },
-                        label = { Text(stringResource(R.string.home)) },
-                        selected = false,
-                        onClick = onNavigateToHome
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = AndroidR.drawable.ic_popup_reminder),
-                                contentDescription = "Notifications"
-                            )
-                        },
-                        label = { stringResource(R.string.notifications)},
-                        selected = false,
-                        onClick = onNavigateToNotifications
-                    )
-                }
-            }
-        }
+    WeFixItAppScaffold(
+        title = stringResource(R.string.edit_profile),
+        currentRoute = "edit_profile",
+        navController = commonActions.navController,
+        onNavigateToProfile = commonActions.navigateToProfile,
+        onNavigateToHome = commonActions.navigateToHome,
+        onOpenSettings = commonActions.openSettings,
+        onNavigateToNotifications = commonActions.navigateToNotifications,
+        onNavigateToAssignments = commonActions.navigateToAssignments,
+        onNavigateToBreakdownReporting = commonActions.navigateToBreakdownReporting,
+        onNavigateToMessages = commonActions.navigateToMessages,
+        onLogout = commonActions.logout,
+        authViewModel = authViewModel,
+        onNavigateToAdminDashboard = commonActions.navigateToAdminDashboard,
+        onNavigateToAdminUsers = commonActions.navigateToAdminUsers,
+        onNavigateToAdminEquipment = commonActions.navigateToAdminEquipment,
+        onNavigateToAdminBreakdowns = commonActions.navigateToAdminBreakdowns,
+        onNavigateToAdminAssignments = commonActions.navigateToAdminAssignments,
+        showBackButton = true,
+        onBackClick = onBack,
+        notificationViewModel = hiltViewModel()
     ) { padding ->
         Column(
             modifier = Modifier
@@ -238,160 +171,171 @@ fun EditProfileScreen(
                 .background(Color.White),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-            ) {
+            if (isLoading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .clip(CircleShape)
-                        .background(Color(0xFF5C5CFF))
-                        .border(2.dp, Color.White, CircleShape)
+                        .background(Color.White.copy(alpha = 0.8f)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = name.firstOrNull()?.uppercase() ?: "U",
-                        color = Color.White,
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator(color = Color(0xFF5C5CFF))
                 }
+            } else {
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.BottomEnd)
-                        .clip(CircleShape)
-                        .background(Color(0xFF5C5CFF))
-                        .padding(4.dp)
-                        .clickable { imagePickerLauncher.launch("image/*") }
+                        .size(100.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = AndroidR.drawable.ic_menu_camera),
-                        contentDescription = "Change profile picture",
-                        tint = Color.White,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "№ ${user?.id?.take(8) ?: "N/A"}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                ProfileTextField(
-                    label = stringResource(R.string.name),
-                    value = name,
-                    placeholder = currentProfile?.name ?: "Name not defined",
-                    onValueChange = { name = it },
-                    iconResId = AndroidR.drawable.ic_menu_myplaces
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                ProfileTextField(
-                    label = stringResource(R.string.email),
-                    value = email,
-                    placeholder = user?.email ?: "Email not defined" ,
-                    onValueChange = { email = it },
-                    iconResId = AndroidR.drawable.ic_dialog_email,
-                    enabled = false
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                ProfileTextField(
-                    label = stringResource(R.string.phone),
-                    value = phoneNumber,
-                    placeholder = currentProfile?.phone ?: "Phone not defined",
-                    onValueChange = { phoneNumber = it },
-                    iconResId = AndroidR.drawable.ic_menu_call
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text(stringResource(R.string.change_password)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Password",
-                            tint = Color.Gray
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(Color(0xFF5C5CFF))
+                            .border(2.dp, Color.White, CircleShape)
+                    ) {
+                        Text(
+                            text = name.firstOrNull()?.uppercase() ?: "U",
+                            color = Color.White,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Center)
                         )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                painter = painterResource(
-                                    id = if (passwordVisible) AndroidR.drawable.ic_partial_secure
-                                    else AndroidR.drawable.ic_secure
-                                ),
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password"
-                            )
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF5C5CFF),
-                        unfocusedBorderColor = Color.LightGray
-                    )
-                )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .align(Alignment.BottomEnd)
+                            .clip(CircleShape)
+                            .background(Color(0xFF5C5CFF))
+                            .padding(4.dp)
+                            .clickable { imagePickerLauncher.launch("image/*") }
+                    ) {
+                        Icon(
+                            painter = painterResource(id = AndroidR.drawable.ic_menu_camera),
+                            contentDescription = "Change profile picture",
+                            tint = Color.White,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                ProfileTextField(
-                    label = "Speciality",
-                    value = speciality,
-                    placeholder = currentProfile?.role ?: "Speciality not defined",
-                    onValueChange = { speciality = it },
-                    iconResId = AndroidR.drawable.ic_menu_manage
+                Text(
+                    text = "№ ${user?.id?.take(8) ?: "N/A"}",
+                    fontSize = 14.sp,
+                    color = Color.Gray
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                ProfileTextField(
-                    label = "Block/Location",
-                    value = block,
-                    placeholder = currentProfile?.location ?: "Block/Location not defined",
-                    onValueChange = { block = it },
-                    iconResId = AndroidR.drawable.ic_menu_slideshow
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { saveProfile() },
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF5C5CFF)
-                    )
+                        .padding(horizontal = 16.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.save),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
+                    ProfileTextField(
+                        label = stringResource(R.string.name),
+                        value = name,
+                        placeholder = currentProfile?.name ?: "Name not defined",
+                        onValueChange = { name = it },
+                        iconResId = AndroidR.drawable.ic_menu_myplaces
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ProfileTextField(
+                        label = stringResource(R.string.email),
+                        value = email,
+                        placeholder = user?.email ?: "Email not defined",
+                        onValueChange = { email = it },
+                        iconResId = AndroidR.drawable.ic_dialog_email,
+                        enabled = false
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ProfileTextField(
+                        label = stringResource(R.string.phone),
+                        value = phoneNumber,
+                        placeholder = currentProfile?.phone ?: "Phone not defined",
+                        onValueChange = { phoneNumber = it },
+                        iconResId = AndroidR.drawable.ic_menu_call
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.change_password)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Password",
+                                tint = Color.Gray
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (passwordVisible) AndroidR.drawable.ic_partial_secure
+                                        else AndroidR.drawable.ic_secure
+                                    ),
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF5C5CFF),
+                            unfocusedBorderColor = Color.LightGray
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ProfileTextField(
+                        label = "Speciality",
+                        value = speciality,
+                        placeholder = currentProfile?.role ?: "Speciality not defined",
+                        onValueChange = { speciality = it },
+                        iconResId = AndroidR.drawable.ic_menu_manage
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ProfileTextField(
+                        label = "Block/Location",
+                        value = block,
+                        placeholder = currentProfile?.location ?: "Block/Location not defined",
+                        onValueChange = { block = it },
+                        iconResId = AndroidR.drawable.ic_menu_slideshow
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    Button(
+                        onClick = { saveProfile() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF5C5CFF)
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.save),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

@@ -70,7 +70,6 @@ fun BreakdownManagementScreen(
     var showPhotoDialog by remember { mutableStateOf(false) }
     var selectedBreakdownForPhotos by remember { mutableStateOf<Breakdown?>(null) }
 
-    // Filter breakdowns based on selected status
     val filteredBreakdowns = remember(breakdowns, filterStatus) {
         when (filterStatus) {
             "all" -> breakdowns
@@ -78,12 +77,10 @@ fun BreakdownManagementScreen(
         }
     }
 
-    // Get technicians (active users with technician role)
     val technicians = remember(users) {
         users.filter { it.role == "technician" && it.status == "active" }
     }
 
-    // Load data when the screen is first displayed
     LaunchedEffect(Unit) {
         viewModel.loadAllData()
     }
@@ -116,7 +113,6 @@ fun BreakdownManagementScreen(
                 )
             }
 
-            // Filter dropdown
             var expanded by remember { mutableStateOf(false) }
             Box {
                 IconButton(onClick = { expanded = true }) {
@@ -423,7 +419,6 @@ private fun BreakdownCard(
                 }
             }
 
-            // Expandable photo preview
             if (photos.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -515,7 +510,6 @@ private fun PhotoManagementDialog(
                     viewModel.uploadBreakdownPhoto(breakdownId, imageBytes, fileName)
                 }
             } catch (e: Exception) {
-                // Handle error
             }
         }
     }
@@ -535,7 +529,6 @@ private fun PhotoManagementDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -556,7 +549,6 @@ private fun PhotoManagementDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Add photo button
                 Button(
                     onClick = { imagePickerLauncher.launch("image/*") },
                     modifier = Modifier.fillMaxWidth(),
@@ -613,7 +605,6 @@ private fun PhotoManagementDialog(
 //                                        }
                                     )
                                 }
-                                // Fill remaining space if odd number of photos
                                 if (photoRow.size == 1) {
                                     Spacer(modifier = Modifier.weight(1f))
                                 }
@@ -625,7 +616,6 @@ private fun PhotoManagementDialog(
         }
     }
 
-    // Full image dialog
     if (showFullImage) {
         Dialog(
             onDismissRequest = { showFullImage = false }
@@ -705,7 +695,6 @@ private fun PhotoItem(
 //                )
 //            }
 
-            // Upload date
             photo.uploaded_at?.let { uploadedAt ->
                 val formattedDate = try {
                     val date = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(uploadedAt)
@@ -731,7 +720,6 @@ private fun PhotoItem(
     }
 }
 
-// Keep the existing TechnicianAssignmentDialog and BreakdownCreateDialog as they are
 @Composable
 private fun TechnicianAssignmentDialog(
     technicians: List<UserProfile>,
@@ -803,11 +791,9 @@ fun BreakdownCreateDialog(
     var urgency by remember { mutableStateOf("low") }
     var location by remember { mutableStateOf("") }
 
-    // Dropdown expansion states
     var equipmentExpanded by remember { mutableStateOf(false) }
     var urgencyExpanded by remember { mutableStateOf(false) }
 
-    // Get equipment data from viewModel
     val equipment by viewModel.equipment.collectAsStateWithLifecycle()
 
     val urgencyLevels = listOf("low", "medium", "high")
@@ -881,7 +867,6 @@ fun BreakdownCreateDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Urgency dropdown
                 ExposedDropdownMenuBox(
                     expanded = urgencyExpanded,
                     onExpandedChange = { urgencyExpanded = !urgencyExpanded }

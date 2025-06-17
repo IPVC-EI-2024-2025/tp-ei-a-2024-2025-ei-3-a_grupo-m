@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
@@ -151,6 +152,11 @@ fun NotificationsScreen(
             TopAppBar(
                 title = {
                     Text("Notifications ${if (unreadCount > 0) "($unreadCount)" else ""}")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { commonActions.navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
                 },
                 actions = {
                     IconButton(

@@ -115,7 +115,7 @@ fun AssignmentManagementScreen(
     if (showAddDialog || editAssignment != null) {
         AssignmentEditDialog(
             assignment = editAssignment,
-            viewModel = viewModel, // <-- Pass the existing ViewModel instance
+            viewModel = viewModel,
             onDismiss = {
                 showAddDialog = false
                 editAssignment = null
@@ -143,7 +143,6 @@ fun AssignmentItem(
     val breakdowns by viewModel.breakdowns.collectAsStateWithLifecycle()
     val users by viewModel.users.collectAsStateWithLifecycle()
 
-    // Find related breakdown and technician
     val breakdown = breakdowns.find { it.breakdown_id == assignment.breakdown_id }
     val technician = users.find { it.user_id == assignment.technician_id }
 
@@ -189,16 +188,13 @@ fun AssignmentEditDialog(
     onDismiss: () -> Unit,
     onSave: (Assignment) -> Unit
 ) {
-    // State for dropdown selections
     var breakdownId by remember { mutableStateOf(assignment?.breakdown_id ?: "") }
     var technicianId by remember { mutableStateOf(assignment?.technician_id ?: "") }
     var status by remember { mutableStateOf(assignment?.status ?: "active") }
 
-    // Fetch data for dropdowns - now using the passed ViewModel that already has data
     val breakdowns by viewModel.breakdowns.collectAsStateWithLifecycle()
     val technicians by viewModel.users.collectAsStateWithLifecycle()
 
-    // Filter technicians to only include those with technician role
     val filteredTechnicians = remember(technicians) {
         technicians.filter { it.role == "technician" }
     }
@@ -208,7 +204,6 @@ fun AssignmentEditDialog(
     }
 
 
-    // Dropdown expansion states
     var breakdownExpanded by remember { mutableStateOf(false) }
     var technicianExpanded by remember { mutableStateOf(false) }
     var statusExpanded by remember { mutableStateOf(false) }
@@ -218,7 +213,6 @@ fun AssignmentEditDialog(
         title = { Text(if (assignment == null) "Add Assignment" else "Edit Assignment") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Breakdown dropdown
                 ExposedDropdownMenuBox(
                     expanded = breakdownExpanded,
                     onExpandedChange = { breakdownExpanded = !breakdownExpanded }
@@ -265,7 +259,7 @@ fun AssignmentEditDialog(
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(), // <-- Add this for proper dropdown behavior
+                            .menuAnchor(),
                         readOnly = true,
                         value = technicianId.let { id ->
                             filteredTechnicians.find { it.user_id == id }?.name ?: "Select Technician"
@@ -292,7 +286,6 @@ fun AssignmentEditDialog(
                     }
                 }
 
-                // Status dropdown
                 ExposedDropdownMenuBox(
                     expanded = statusExpanded,
                     onExpandedChange = { statusExpanded = !statusExpanded }
@@ -300,7 +293,7 @@ fun AssignmentEditDialog(
                     OutlinedTextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(), // <-- Add this for proper dropdown behavior
+                            .menuAnchor(),
                         readOnly = true,
                         value = status,
                         onValueChange = {},

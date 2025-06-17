@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializable
 data class UserProfile(
     val user_id: String,
     val name: String,
-    val role: String, // 'admin', 'technician', 'manager'
-    val status: String = "active", // 'active', 'inactive'
+    val role: String,
+    val status: String = "active",
     val created_at: String? = null,
     val phone: String? = null,
     val location: String? = null,
@@ -22,7 +22,7 @@ data class Equipment(
     val type: String,
     val model: String? = null,
     val location: String? = null,
-    val status: String = "active" // 'active', 'inactive', 'unavailable'
+    val status: String = "active"
 )
 
 @Serializable
@@ -84,7 +84,6 @@ data class Message(
     val sent_at: String? = null
 )
 
-// Additional data classes for API responses and complex operations
 @Serializable
 data class BreakdownWithDetails(
     val breakdown_id: String,
@@ -129,13 +128,13 @@ data class Chat(
 @Serializable
 data class Notification(
     val notification_id: String? = null,
-    val user_id: String, // Recipient user ID
+    val user_id: String,
     val title: String,
     val message: String,
-    val related_id: String?, // ID of related entity (breakdown, assignment, etc.)
+    val related_id: String?,
     val read: Boolean = false,
     val created_at: String? = null,
-    val metadata: String? = null // JSON string for additional data
+    val metadata: String? = null
 )
 
 @Serializable

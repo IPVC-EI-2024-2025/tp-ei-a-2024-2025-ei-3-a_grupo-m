@@ -48,7 +48,7 @@ fun WeFixItAppScaffold(
     onNavigateToAdminAssignments: () -> Unit,
     onNavigateToBreakdownReporting: () -> Unit,
     onNavigateToMessages: () -> Unit,
-    showBackButton: Boolean = currentRoute != "home", // Modified to show back button on all screens except home
+    showBackButton: Boolean = currentRoute != "home",
     onBackClick: () -> Unit = { navController.popBackStack() },
     actions: @Composable RowScope.() -> Unit = {},
     onLogout: () -> Unit,
@@ -165,7 +165,7 @@ fun WeFixItAppScaffold(
                     title = title,
                     onMenuClick = { scope.launch { drawerState.open() } },
                     onSettingsClick = onOpenSettings,
-                    showLogout = false, // Removed logout from top bar
+                    showLogout = false,
                     showBackButton = showBackButton,
                     onBackClick = onBackClick,
                     actions = actions

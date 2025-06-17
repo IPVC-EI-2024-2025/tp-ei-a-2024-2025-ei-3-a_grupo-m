@@ -58,11 +58,11 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun updateUserEmail(userId: String, newEmail: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            // Get the current user session first
+            // Get current user
             val session = client.auth.currentSessionOrNull()
                 ?: throw Exception("No active session")
 
-            // Update the email - this will trigger a confirmation email
+            // Update email
             val result = client.auth.updateUser {
                 email = newEmail
             }
@@ -77,7 +77,6 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun updateUserProfile(profile: UserProfile): UserProfile = withContext(Dispatchers.IO) {
         try {
-            // Update email first if changed
             profile.email?.let { newEmail ->
                 val currentUser = client.auth.currentUserOrNull()
                 if (currentUser?.email != newEmail) {
@@ -88,7 +87,6 @@ class SupabaseRepository @Inject constructor() {
                 }
             }
 
-            // Then update profile data
             client.from("user_profiles")
                 .update({
                     set("name", profile.name)
@@ -100,7 +98,6 @@ class SupabaseRepository @Inject constructor() {
                     filter { eq("user_id", profile.user_id) }
                 }
 
-            // Return the updated profile
             client.from("user_profiles")
                 .select { filter { eq("user_id", profile.user_id) } }
                 .decodeSingle()
@@ -344,7 +341,6 @@ class SupabaseRepository @Inject constructor() {
                 .decodeList<Assignment>()
             Log.d("SupabaseRepository", "Assignments with status filter: ${resultWithFilter.size} items")
 
-            // Also try a raw query to see if we get different results
             try {
                 val rawQueryResult = client.from("assignments")
                     .select(columns = Columns.list("*")) {
@@ -478,7 +474,7 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun getBreakdownPhotosWithUrls(breakdownId: String): List<BreakdownPhoto> = withContext(Dispatchers.IO) {
         try {
-            // First get all photo records
+            // Get all photo records
             val photos = client.from("breakdown_photos")
                 .select {
                     filter { eq("breakdown_id", breakdownId) }
@@ -508,7 +504,7 @@ class SupabaseRepository @Inject constructor() {
                 .from(SupabaseClient.BUCKET_NAME)
                 .delete(listOf(filePath))
 
-            // Then delete the database record
+            // Delete the database record
             client.from("breakdown_photos").delete {
                 filter { eq("photo_id", photoId) }
             }
@@ -540,18 +536,16 @@ class SupabaseRepository @Inject constructor() {
         try {
             Log.d("SupabaseRepository", "Sending message: $message")
 
-            // Validate required fields
             message.sender_id?.let { require(it.isNotBlank()) { "Sender ID is required" } }
             require(message.content.isNotBlank()) { "Message content is required" }
 
-            // Insert the message and get the result
             val insertedMessage = client.from("messages")
-                .insert(message.copy(message_id = null)) // Ensure ID is null for insertion
+                .insert(message.copy(message_id = null))
                 .decodeSingle<Message>()
 
             Log.d("SupabaseRepository", "Message inserted successfully: ${insertedMessage.message_id}")
 
-            // Update chat's last message timestamp if chat_id exists
+            // Update las message
             message.chat_id?.let { chatId ->
                 try {
                     client.from("chats")
@@ -563,7 +557,7 @@ class SupabaseRepository @Inject constructor() {
                     Log.d("SupabaseRepository", "Chat timestamp updated for chat: $chatId")
                 } catch (e: Exception) {
                     Log.w("SupabaseRepository", "Failed to update chat timestamp: ${e.message}")
-                    // Don't throw here, the message was sent successfully
+
                 }
             }
 
@@ -651,7 +645,6 @@ class SupabaseRepository @Inject constructor() {
 
             val result = client.from("notifications")
                 .insert(notification) {
-                    // Explicitly set the returning type to ensure proper serialization
                     select(columns = Columns.list("*"))
                 }
                 .decodeSingle<Notification>()

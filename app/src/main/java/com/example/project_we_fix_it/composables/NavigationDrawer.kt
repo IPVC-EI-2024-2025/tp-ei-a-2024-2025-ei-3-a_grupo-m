@@ -35,7 +35,6 @@ fun WeFixItNavigationDrawer(
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Scrollable menu items
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -100,7 +99,6 @@ fun WeFixItNavigationDrawer(
                 modifier = Modifier.padding(vertical = 4.dp)
             )
 
-            // Admin section
             if (userRole.equals("admin", ignoreCase = true)) {
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
@@ -152,7 +150,6 @@ fun WeFixItNavigationDrawer(
             }
         }
 
-        // Fixed bottom section
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
