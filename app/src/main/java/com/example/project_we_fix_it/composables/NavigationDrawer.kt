@@ -68,14 +68,6 @@ fun WeFixItNavigationDrawer(
             )
 
             NavigationDrawerItem(
-                label = { Text(stringResource(R.string.my_breakdowns)) },
-                icon = { Icon(Icons.Default.List, contentDescription = null) },
-                selected = false,
-                onClick = onMyBreakdownsClick,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-
-            NavigationDrawerItem(
                 label = { Text(stringResource(R.string.notifications)) },
                 icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
                 selected = false,

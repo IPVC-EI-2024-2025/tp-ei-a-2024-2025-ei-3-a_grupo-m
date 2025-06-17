@@ -148,7 +148,7 @@ data class TechnicianActiveWork(
 fun Breakdown.toBreakdownItem(): BreakdownItem {
     return BreakdownItem(
         id = breakdown_id ?: "",
-        title = "Breakdown #${breakdown_id?.takeLast(4)} - ${status.uppercase()}", // Example
+        title = equipment_id ?: "Breakdown",
         description = description,
         priority = when (urgency_level) {
             "high" -> 1
