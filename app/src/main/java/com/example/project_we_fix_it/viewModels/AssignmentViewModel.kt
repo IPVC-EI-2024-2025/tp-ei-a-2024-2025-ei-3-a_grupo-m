@@ -53,27 +53,27 @@ class AssignmentViewModel @Inject constructor(
                 _assignments.value = emptyList()
                 _workingOnBreakdowns.value = emptyList()
                 _assignedBreakdowns.value = emptyList()
+                _activelyWorkingOn.value = emptySet()
 
                 val assignments = supabaseRepository.getAssignmentsByTechnician(technicianId)
                     .filter { it.status != "completed" }
 
+                Log.d("AssignmentViewModel", "Found ${assignments.size} non-completed assignments")
                 assignments.forEach { assignment ->
-                    Log.d("AssignmentViewModel", "Assignment: $assignment")
+                    Log.d("AssignmentViewModel", "Assignment: ${assignment.assignment_id} - Status: ${assignment.status} - BreakdownId: ${assignment.breakdown_id}")
                 }
 
-                val allAssignments = supabaseRepository.getAllAssignmentsDebug()
-                allAssignments.forEach { assignment ->
-                    Log.d("AssignmentViewModel", "All Assignment: $assignment")
-                }
+                val activeBreakdowns = supabaseRepository.getActiveBreakdowns(technicianId)
+                Log.d("AssignmentViewModel", "Active breakdowns: $activeBreakdowns")
+                _activelyWorkingOn.value = activeBreakdowns.toSet()
 
                 val assignmentsWithDetails = assignments.map { assignment ->
                     Log.d("AssignmentViewModel", "Processing assignment ID: ${assignment.assignment_id}")
 
-
                     val breakdown = assignment.breakdown_id?.let {
                         Log.d("AssignmentViewModel", "Fetching breakdown for ID: $it")
                         supabaseRepository.getBreakdownById(it).also { bd ->
-                            Log.d("AssignmentViewModel", "Breakdown fetched: ${bd?.breakdown_id}")
+                            Log.d("AssignmentViewModel", "Breakdown fetched: ${bd?.breakdown_id} - Status: ${bd?.status} - Description: ${bd?.description}")
                         }
                     }
 
@@ -103,31 +103,46 @@ class AssignmentViewModel @Inject constructor(
                         technician = technician,
                         assigner = assigner
                     ).also {
-                        Log.d("AssignmentViewModel", "Created AssignmentWithDetails: $it")
+                        Log.d("AssignmentViewModel", "Created AssignmentWithDetails: ${it.assignment_id} with breakdown: ${it.breakdown?.breakdown_id}")
                     }
-
                 }
 
                 _assignments.value = assignmentsWithDetails
-
-                val activeBreakdowns = supabaseRepository.getActiveBreakdowns(technicianId)
-
-                _activelyWorkingOn.value = activeBreakdowns.toSet()
+                Log.d("AssignmentViewModel", "Set ${assignmentsWithDetails.size} assignments")
 
                 val allAssigned = assignmentsWithDetails
-                    .filter {
-                        it.breakdown != null &&
-                                it.technician_id == technicianId &&
-                                it.breakdown.status != "closed"
+                    .filter { assignment ->
+                        val isValid = assignment.breakdown != null &&
+                                assignment.technician_id == technicianId &&
+                                assignment.breakdown.status != "closed" &&
+                                assignment.breakdown.status != "completed"
+
+                        Log.d("AssignmentViewModel", "Assignment ${assignment.assignment_id}: " +
+                                "breakdown=${assignment.breakdown?.breakdown_id}, " +
+                                "technicianMatch=${assignment.technician_id == technicianId}, " +
+                                "status=${assignment.breakdown?.status}, " +
+                                "isValid=$isValid")
+                        isValid
                     }
                     .mapNotNull { it.breakdown }
 
+                Log.d("AssignmentViewModel", "Filtered assigned breakdowns: ${allAssigned.size}")
+                allAssigned.forEach { breakdown ->
+                    Log.d("AssignmentViewModel", "Assigned breakdown: ${breakdown.breakdown_id} - ${breakdown.description} - Status: ${breakdown.status}")
+                }
+
                 _assignedBreakdowns.value = allAssigned
 
-                _workingOnBreakdowns.value = _assignments.value
-                    .filter { it.breakdown_id in activeBreakdowns }
-                    .mapNotNull { it.breakdown }
+                val workingOn = allAssigned.filter { breakdown ->
+                    activeBreakdowns.contains(breakdown.breakdown_id)
+                }
 
+                Log.d("AssignmentViewModel", "Working on breakdowns: ${workingOn.size}")
+                workingOn.forEach { breakdown ->
+                    Log.d("AssignmentViewModel", "Working on breakdown: ${breakdown.breakdown_id} - ${breakdown.description}")
+                }
+
+                _workingOnBreakdowns.value = workingOn
 
             } catch (e: Exception) {
                 Log.e("AssignmentViewModel", "Error loading assignments", e)
@@ -135,6 +150,7 @@ class AssignmentViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
                 Log.d("AssignmentViewModel", "Finished loading assignments")
+                Log.d("AssignmentViewModel", "Final state - Assigned: ${_assignedBreakdowns.value.size}, Working on: ${_workingOnBreakdowns.value.size}")
             }
         }
     }
@@ -179,10 +195,13 @@ class AssignmentViewModel @Inject constructor(
     }
 
     fun refreshAssignments(technicianId: String) {
+        Log.d("AssignmentViewModel", "Refreshing assignments - clearing current data")
         _assignments.value = emptyList()
         _workingOnBreakdowns.value = emptyList()
         _assignedBreakdowns.value = emptyList()
+        _activelyWorkingOn.value = emptySet()
+        _errorMessage.value = ""
+
         loadAssignments(technicianId)
     }
-
 }

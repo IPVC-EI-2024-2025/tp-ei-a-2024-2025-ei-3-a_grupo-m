@@ -42,7 +42,6 @@ fun NotificationsScreen(
     commonActions: CommonScreenActions,
     authViewModel: AuthViewModel = hiltViewModel(),
     notificationViewModel: NotificationViewModel = hiltViewModel(),
-    assignmentViewModel: AssignmentViewModel = hiltViewModel(),
     adminViewModel: AdminViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsState()

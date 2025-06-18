@@ -77,6 +77,7 @@ fun AssignedBreakdowns(
     }
 }
 
+
 @Composable
 fun AssignedBreakdownItem(
     breakdown: BreakdownItem,
@@ -140,28 +141,24 @@ fun MyAssignmentsScreen(
     val isLoading by assignmentViewModel.isLoading.collectAsState()
     val errorMessage by assignmentViewModel.errorMessage.collectAsState()
     val currentUserId = authState.user?.id
-
     var showStartWorkingDialog by remember { mutableStateOf<String?>(null) }
-    var showCompleteRequestDialog by remember { mutableStateOf<String?>(null) }
-
     val activelyWorkingOn by assignmentViewModel.activelyWorkingOn.collectAsState()
+    val navController = commonActions.navController
+    val currentBackStackEntry by navController.currentBackStackEntryFlow.collectAsState(null)
+    val currentRoute = currentBackStackEntry?.destination?.route
 
-    LaunchedEffect(currentUserId) {
-        currentUserId?.let { userId ->
-            Log.d("AssignmentsScreen", "Initial load of assignments")
-            assignmentViewModel.loadAssignments(userId)
+    LaunchedEffect(currentRoute, currentUserId) {
+        Log.d("AssignmentsScreen", "LaunchedEffect triggered - Route: $currentRoute, UserId: $currentUserId")
+        if (currentRoute == Routes.ASSIGNMENTS && currentUserId != null) {
+            Log.d("AssignmentsScreen", "Screen entered - refreshing assignments for user: $currentUserId")
+            assignmentViewModel.refreshAssignments(currentUserId)
         }
     }
 
-    val navController = commonActions.navController
-    val currentBackStackEntry by navController.currentBackStackEntryFlow.collectAsState(null)
-
-    LaunchedEffect(currentBackStackEntry) {
-        if (currentBackStackEntry?.destination?.route == Routes.ASSIGNMENTS) {
-            currentUserId?.let { userId ->
-                Log.d("AssignmentsScreen", "Reloading assignments on return")
-                assignmentViewModel.refreshAssignments(userId)
-            }
+    LaunchedEffect(currentUserId) {
+        if (currentUserId != null) {
+            Log.d("AssignmentsScreen", "User ID available - loading assignments: $currentUserId")
+            assignmentViewModel.refreshAssignments(currentUserId)
         }
     }
 
@@ -192,37 +189,10 @@ fun MyAssignmentsScreen(
         )
     }
 
-    showCompleteRequestDialog?.let { breakdownId ->
-        AlertDialog(
-            onDismissRequest = { showCompleteRequestDialog = null },
-            title = { Text(stringResource(R.string.request_complete)) },
-            text = { Text(stringResource(R.string.request_complete_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        currentUserId?.let { userId ->
-                            assignmentViewModel.requestCompleteBreakdown(breakdownId, userId)
-                        }
-                        showCompleteRequestDialog = null
-                    }
-                ) {
-                    Text(stringResource(R.string.request_completion))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showCompleteRequestDialog = null }
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
     val workingOnBreakdownItems by remember {
         derivedStateOf {
-            assignmentViewModel.workingOnBreakdowns.value
-                .filter { breakdown -> breakdown.status != "completed" }
+            workingOnBreakdowns
+                .filter { breakdown -> breakdown.status != "completed" && breakdown.status != "closed" }
                 .map { breakdown ->
                     BreakdownItem(
                         id = breakdown.breakdown_id ?: "",
@@ -234,25 +204,37 @@ fun MyAssignmentsScreen(
                             else -> 1
                         }
                     )
+                }.also { items ->
+                    Log.d("AssignmentsScreen", "Working on breakdown items count: ${items.size}")
+                    items.forEach { item ->
+                        Log.d("AssignmentsScreen", "Working on item: ${item.id} - ${item.title}")
+                    }
                 }
         }
     }
 
-    val assignedBreakdownItems = remember(assignmentViewModel.assignedBreakdowns) {
-        assignmentViewModel.assignedBreakdowns.value
-            .filter { breakdown -> breakdown.status != "completed" }
-            .map { breakdown ->
-                BreakdownItem(
-                    id = breakdown.breakdown_id ?: "",
-                    title = breakdown.description.take(30),
-                    description = breakdown.description,
-                    priority = when (breakdown.urgency_level) {
-                        "critical" -> 3
-                        "high" -> 2
-                        else -> 1
+    val assignedBreakdownItems by remember {
+        derivedStateOf {
+            assignedBreakdowns
+                .filter { breakdown -> breakdown.status != "completed" && breakdown.status != "closed" }
+                .map { breakdown ->
+                    BreakdownItem(
+                        id = breakdown.breakdown_id ?: "",
+                        title = breakdown.description.take(30),
+                        description = breakdown.description,
+                        priority = when (breakdown.urgency_level) {
+                            "critical" -> 3
+                            "high" -> 2
+                            else -> 1
+                        }
+                    )
+                }.also { items ->
+                    Log.d("AssignmentsScreen", "Assigned breakdown items count: ${items.size}")
+                    items.forEach { item ->
+                        Log.d("AssignmentsScreen", "Assigned item: ${item.id} - ${item.title}")
                     }
-                )
-            }
+                }
+        }
     }
 
     if (isLoading) {
@@ -312,7 +294,13 @@ fun MyAssignmentsScreen(
 
             when (selectedTabIndex) {
                 0 -> {
+                    Log.d("AssignmentsScreen", "Showing assigned tab - items count: ${assignedBreakdownItems.size}")
                     if (assignedBreakdownItems.isEmpty()) {
+                        Text(
+                            text = "No assigned breakdowns",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     } else {
                         AssignedBreakdowns(
                             assignedBreakdownItems,
@@ -327,12 +315,18 @@ fun MyAssignmentsScreen(
                     }
                 }
                 1 -> {
+                    Log.d("AssignmentsScreen", "Showing working on tab - items count: ${workingOnBreakdownItems.size}")
                     if (workingOnBreakdownItems.isEmpty()) {
+                        Text(
+                            text = "No breakdowns currently being worked on",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     } else {
                         WorkingOnBreakdowns(
                             workingOnBreakdownItems,
                             onBreakdownClick = { id ->
-                                showCompleteRequestDialog = id
+                                onBreakdownClick(id)
                             }
                         )
                     }
