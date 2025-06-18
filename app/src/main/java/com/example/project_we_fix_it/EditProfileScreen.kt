@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.project_we_fix_it.auth.AuthViewModel
 import com.example.project_we_fix_it.composables.WeFixItAppScaffold
 import com.example.project_we_fix_it.nav.CommonScreenActions
@@ -53,8 +55,8 @@ fun EditProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     profileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
-    val TAG = "EditProfileScreen"
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     val profileState by profileViewModel.profileState.collectAsStateWithLifecycle()
@@ -71,11 +73,32 @@ fun EditProfileScreen(
     var block by remember { mutableStateOf("") }
     var profileImageUri by remember { mutableStateOf<Uri?>(null) }
     var showSaveSuccess by remember { mutableStateOf(false) }
+    val profileImageUrl by profileViewModel.profileImageUrl.collectAsStateWithLifecycle()
+
+    fun uploadProfileImage(uri: Uri) {
+        coroutineScope.launch {
+            try {
+                val contentResolver = context.contentResolver
+
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    val imageBytes = inputStream.readBytes()
+                    val fileName = "profile_${System.currentTimeMillis()}.jpg"
+
+                    profileViewModel.uploadProfilePicture(imageBytes, fileName)
+                } ?: throw Exception("Could not open image file")
+            } catch (e: Exception) {
+                Log.d("EditProfileScreen", "Failed to upload profile image", e)
+            }
+        }
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let { profileImageUri = it }
+        uri?.let {
+            profileImageUri = it
+            uploadProfileImage(it)
+        }
     }
 
     LaunchedEffect(currentProfile, user) {
@@ -84,6 +107,12 @@ fun EditProfileScreen(
         phoneNumber = currentProfile?.phone ?: ""
         speciality = currentProfile?.role ?: ""
         block = currentProfile?.location ?: ""
+    }
+
+    LaunchedEffect(currentProfile) {
+        currentProfile?.user_id?.let { userId ->
+            profileViewModel.loadProfilePicture(userId)
+        }
     }
 
     fun saveProfile() {
@@ -168,11 +197,11 @@ fun EditProfileScreen(
     ) { padding ->
         Column(
             modifier = Modifier
-        .fillMaxSize()
-        .padding(padding)
-        .background(Color.White)
-        .verticalScroll(rememberScrollState()),
-    horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .padding(padding)
+                .background(Color.White)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (isLoading) {
                 Box(
@@ -197,13 +226,22 @@ fun EditProfileScreen(
                             .background(Color(0xFF5C5CFF))
                             .border(2.dp, Color.White, CircleShape)
                     ) {
-                        Text(
-                            text = name.firstOrNull()?.uppercase() ?: "U",
-                            color = Color.White,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        if (profileImageUrl != null) {
+                            AsyncImage(
+                                model = profileImageUrl,
+                                contentDescription = "Profile Picture",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = name.firstOrNull()?.uppercase() ?: "U",
+                                color = Color.White,
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
                     }
 
                     Box(

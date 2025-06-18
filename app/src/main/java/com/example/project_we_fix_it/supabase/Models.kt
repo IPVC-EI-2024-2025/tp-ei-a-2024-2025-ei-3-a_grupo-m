@@ -12,7 +12,8 @@ data class UserProfile(
     val created_at: String? = null,
     val phone: String? = null,
     val location: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val profile_image_url: String? = null
 )
 
 @Serializable

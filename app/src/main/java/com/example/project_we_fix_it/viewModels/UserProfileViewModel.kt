@@ -33,6 +33,9 @@ class UserProfileViewModel @Inject constructor(
     private val _updateSuccess = MutableStateFlow(false)
     val updateSuccess: StateFlow<Boolean> = _updateSuccess.asStateFlow()
 
+    private val _profileImageUrl = MutableStateFlow<String?>(null)
+    val profileImageUrl: StateFlow<String?> = _profileImageUrl.asStateFlow()
+
     fun loadProfile(userId: String) {
         Log.d(TAG, "loadProfile() called with: $userId")
 
@@ -96,6 +99,40 @@ class UserProfileViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
                 Log.d(TAG, "Profile update flow completed")
+            }
+        }
+    }
+
+    fun uploadProfilePicture(imageBytes: ByteArray, fileName: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val userId = authRepository.getCurrentUser()?.id
+                    ?: throw Exception("User not logged in")
+
+                val imageUrl = supabaseRepository.uploadProfilePicture(
+                    userId, imageBytes, fileName
+                )
+
+                _profileImageUrl.value = imageUrl
+                loadProfile(userId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to upload profile picture: ${e.message}")
+                _error.value = "Failed to upload profile picture: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadProfilePicture(userId: String) {
+        viewModelScope.launch {
+            try {
+                val url = supabaseRepository.getProfilePictureUrl(userId)
+                _profileImageUrl.value = url
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load profile picture: ${e.message}")
             }
         }
     }

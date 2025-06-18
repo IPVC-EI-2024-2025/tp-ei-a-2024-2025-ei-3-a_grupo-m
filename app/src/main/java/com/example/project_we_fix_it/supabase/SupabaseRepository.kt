@@ -428,6 +428,7 @@ class SupabaseRepository @Inject constructor() {
             throw Exception("Error fetching breakdown photos: ${e.message}")
         }
     }
+    // ========== Photos ==========
 
     @OptIn(ExperimentalTime::class)
     suspend fun uploadBreakdownPhoto(
@@ -474,7 +475,6 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun getBreakdownPhotosWithUrls(breakdownId: String): List<BreakdownPhoto> = withContext(Dispatchers.IO) {
         try {
-            // Get all photo records
             val photos = client.from("breakdown_photos")
                 .select {
                     filter { eq("breakdown_id", breakdownId) }
@@ -499,12 +499,10 @@ class SupabaseRepository @Inject constructor() {
 
     suspend fun deleteBreakdownPhoto(photoId: String, filePath: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            // Delete from storage first using consistent client reference
             client.storage
                 .from(SupabaseClient.BUCKET_NAME)
                 .delete(listOf(filePath))
 
-            // Delete the database record
             client.from("breakdown_photos").delete {
                 filter { eq("photo_id", photoId) }
             }
@@ -515,6 +513,69 @@ class SupabaseRepository @Inject constructor() {
             false
         }
     }
+    suspend fun uploadProfilePicture(
+        userId: String,
+        imageBytes: ByteArray,
+        fileName: String
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            Log.d("SupabaseRepo", "Starting profile picture upload for user $userId")
+
+            val bucket = client.storage.from(SupabaseClient.BUCKET_NAME)
+            val filePath = "profiles/$userId/$fileName"
+
+            Log.d("SupabaseRepo", "Uploading to path: $filePath")
+            bucket.upload(filePath, imageBytes) {
+                upsert = true
+            }
+            Log.d("SupabaseRepo", "Upload completed")
+
+            Log.d("SupabaseRepo", "Generating signed URL")
+            val downloadUrl = client.storage
+                .from(SupabaseClient.BUCKET_NAME)
+                .createSignedUrl(filePath, 30.days)
+            Log.d("SupabaseRepo", "Signed URL: $downloadUrl")
+
+            client.from("user_profiles")
+                .update({
+                    set("profile_image_url", downloadUrl)
+                }) {
+                    filter { eq("user_id", userId) }
+                }
+
+            return@withContext downloadUrl
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error in uploadProfilePicture", e)
+            throw Exception("Error uploading profile picture: ${e.message}")
+        }
+    }
+
+    suspend fun getProfilePictureUrl(userId: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val profile = getUserProfile(userId) ?: return@withContext null
+
+            // If URL exists but might be expired, refresh it
+            profile.profile_image_url?.let { existingUrl ->
+                try {
+                    val filePath = existingUrl.substringAfterLast("${SupabaseClient.BUCKET_NAME}/")
+                        .substringBefore("?")
+
+                    return@withContext client.storage
+                        .from(SupabaseClient.BUCKET_NAME)
+                        .createSignedUrl(filePath, 1.days)
+                } catch (e: Exception) {
+                    Log.w("SupabaseRepo", "Failed to refresh URL, returning existing one", e)
+                    return@withContext existingUrl
+                }
+            }
+
+            return@withContext null
+        } catch (e: Exception) {
+            Log.e("SupabaseRepo", "Error getting profile picture URL", e)
+            return@withContext null
+        }
+    }
+
     // ========== MESSAGES ==========
     suspend fun getMessagesByBreakdown(breakdownId: String): List<Message> = withContext(Dispatchers.IO) {
         try {

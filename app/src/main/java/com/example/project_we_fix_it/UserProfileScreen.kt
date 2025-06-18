@@ -28,17 +28,22 @@ import com.example.project_we_fix_it.nav.CommonScreenActions
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import coil.compose.AsyncImage
+import com.example.project_we_fix_it.viewModels.UserProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     commonActions: CommonScreenActions,
     onNavigateToEditProfile: () -> Unit,
-    authViewModel: AuthViewModel = hiltViewModel()
+    authViewModel: AuthViewModel = hiltViewModel(),
+    userProfileViewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val authState by authViewModel.authState.collectAsStateWithLifecycle()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val profileImageUrl by userProfileViewModel.profileImageUrl.collectAsStateWithLifecycle()
 
     LaunchedEffect(authState.isLoggedIn) {
         if (!authState.isLoggedIn && !authState.isLoading) {
@@ -64,6 +69,12 @@ fun UserProfileScreen(
 
     val userProfile = authState.userProfile
     val user = authState.user
+
+    LaunchedEffect(userProfile) {
+        userProfile?.user_id?.let { userId ->
+            userProfileViewModel.loadProfilePicture(userId)
+        }
+    }
 
     if (showLogoutDialog) {
         AlertDialog(
@@ -131,13 +142,22 @@ fun UserProfileScreen(
                         .background(MaterialTheme.colorScheme.primary)
                         .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
                 ) {
-                    Text(
-                        text = userProfile?.name?.firstOrNull()?.uppercase() ?: "U",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    if (profileImageUrl != null) {
+                        AsyncImage(
+                            model = profileImageUrl,
+                            contentDescription = "Profile Picture",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Text(
+                            text = userProfile?.name?.firstOrNull()?.uppercase() ?: "U",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
 
                 IconButton(
