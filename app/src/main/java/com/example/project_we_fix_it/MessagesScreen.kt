@@ -117,16 +117,17 @@ fun MessagesScreen(
     val currentUserId = viewModel.currentUserId
     val breakdowns by viewModel.breakdowns.collectAsState()
 
-
     val error by viewModel.error.collectAsState()
     if (error != null) {
         Log.e("MessagesScreen", "Error: $error")
     }
 
-
-    LaunchedEffect(Unit) {
-        Log.d("MessagesScreen", "Current user ID: $currentUserId")
-        viewModel.loadChats(currentUserId)
+    // Use currentUserId as the key to prevent multiple calls and handle user changes
+    LaunchedEffect(currentUserId) {
+        Log.d("MessagesScreen", "LaunchedEffect triggered for user: $currentUserId")
+        if (currentUserId != null) {
+            viewModel.loadChats(currentUserId)
+        }
     }
 
     WeFixItAppScaffold(
@@ -152,7 +153,8 @@ fun MessagesScreen(
         notificationViewModel = hiltViewModel()
     ) { padding ->
 
-        Log.d("MessagesScreen", "Chats: $chats")
+        Log.d("MessagesScreen", "Rendering with ${chats.size} chats for user: $currentUserId")
+
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -181,7 +183,6 @@ fun MessagesScreen(
                     )
                 }
             }
-
         }
     }
 }

@@ -242,12 +242,16 @@ class AuthRepository @Inject constructor() {
 
 
     suspend fun logout(): Result<Unit> = withContext(Dispatchers.IO) {
-
         try {
+            Log.d("AuthRepository", "Logging out user")
             client.auth.signOut()
+
+            client.auth.clearSession()
+
+            Log.d("AuthRepository", "Logout completed successfully")
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.d("AuthRepo", "Request auth logout")
+            Log.e("AuthRepository", "Logout failed", e)
             Result.failure(Exception("Logout failed: ${e.message}"))
         }
     }
@@ -272,18 +276,36 @@ class AuthRepository @Inject constructor() {
 
     suspend fun refreshSession(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            val currentSession = client.auth.currentSessionOrNull()
+            if (currentSession == null) {
+                Log.w("AuthRepository", "No current session to refresh")
+                return@withContext Result.failure(Exception("No current session"))
+            }
+
+            Log.d("AuthRepository", "Refreshing current session")
             client.auth.refreshCurrentSession()
+
+            val newSession = client.auth.currentSessionOrNull()
+            Log.d("AuthRepository", "Session refreshed successfully - New session exists: ${newSession != null}")
+
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Session refresh failed", e)
             Result.failure(Exception("Session refresh failed: ${e.message}"))
         }
     }
 
     suspend fun loadSession(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            Log.d("AuthRepository", "Loading session from storage")
             client.auth.loadFromStorage()
+
+            val currentUser = client.auth.currentUserOrNull()
+            Log.d("AuthRepository", "Session loaded - User: ${currentUser?.id}")
+
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("AuthRepository", "Session load failed", e)
             Result.failure(Exception("Session load failed: ${e.message}"))
         }
     }

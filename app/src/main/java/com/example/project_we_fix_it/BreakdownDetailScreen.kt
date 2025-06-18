@@ -201,17 +201,37 @@ fun BreakdownDetailsScreen(
                                     if (hasAssignedTechnician) {
                                         val participants = mutableListOf<String>().apply {
                                             add(currentUserId)
-                                            bd.reporter_id?.let { add(it) }
-                                            bd.assignments.firstOrNull()?.technician_id?.let { add(it) }
-                                        }.distinct()
+
+                                            bd.reporter_id?.let { reporterId ->
+                                                if (reporterId != currentUserId) {
+                                                    add(reporterId)
+                                                }
+                                            }
+
+                                            bd.assignments.firstOrNull()?.technician_id?.let { technicianId ->
+                                                if (technicianId != currentUserId) {
+                                                    add(technicianId)
+                                                }
+                                            }
+                                        }
+
+                                        val finalParticipants = participants.distinct()
+
+                                        // Debug logging
+                                        println("Creating chat with participants: $finalParticipants")
+                                        println("Current user ID: $currentUserId")
+                                        println("Reporter ID: ${bd.reporter_id}")
+                                        println("Technician ID: ${bd.assignments.firstOrNull()?.technician_id}")
 
                                         chatViewModel.createOrGetChat(
                                             breakdownId = bd.breakdown_id,
-                                            participants = participants
+                                            participants = finalParticipants
                                         )
                                     } else {
                                         showDialog = true
                                     }
+                                } else {
+                                    println("Error: Current user ID is null")
                                 }
                             }
                         },

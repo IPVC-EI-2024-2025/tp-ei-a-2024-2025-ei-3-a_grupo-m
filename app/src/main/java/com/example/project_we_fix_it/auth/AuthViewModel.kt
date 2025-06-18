@@ -27,9 +27,10 @@ data class AuthState(
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
-    
+
     private val _authState = MutableStateFlow(AuthState(isLoading = true))
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
+
     init {
         checkAuthStatus()
     }
@@ -40,16 +41,24 @@ class AuthViewModel @Inject constructor(
     private val supabaseRepository = SupabaseRepository()
 
     private fun checkAuthStatus() {
-        _authState.value = AuthState(isLoading = true)
-
         viewModelScope.launch {
             try {
+                Log.d("AuthViewModel", "Starting auth status check")
+                _authState.value = AuthState(isLoading = true)
+
                 authRepository.loadSession()
 
-                if (authRepository.isUserLoggedIn()) {
-                    authRepository.refreshSession().fold(
-                        onSuccess = {},
-                        onFailure = {
+                val currentUser = authRepository.getCurrentUser()
+                Log.d("AuthViewModel", "Current user after load: ${currentUser?.id}")
+
+                if (currentUser != null) {
+                    val refreshResult = authRepository.refreshSession()
+                    refreshResult.fold(
+                        onSuccess = {
+                            Log.d("AuthViewModel", "Session refreshed successfully")
+                        },
+                        onFailure = { error ->
+                            Log.w("AuthViewModel", "Session refresh failed: ${error.message}")
                             authRepository.logout()
                             _authState.value = AuthState(isLoading = false, isLoggedIn = false)
                             return@launch
@@ -57,9 +66,13 @@ class AuthViewModel @Inject constructor(
                     )
                 }
 
-                val isLoggedIn = authRepository.isUserLoggedIn()
                 val user = authRepository.getCurrentUser()
-                val userProfile = if (isLoggedIn) authRepository.getCurrentUserProfile() else null
+                val isLoggedIn = user != null
+                val userProfile = if (isLoggedIn) {
+                    authRepository.getCurrentUserProfile()
+                } else null
+
+                Log.d("AuthViewModel", "Final auth state - User: ${user?.id}, LoggedIn: $isLoggedIn")
 
                 _authState.value = AuthState(
                     isLoading = false,
@@ -68,6 +81,7 @@ class AuthViewModel @Inject constructor(
                     userProfile = userProfile
                 )
             } catch (e: Exception) {
+                Log.e("AuthViewModel", "Auth status check failed", e)
                 _authState.value = AuthState(
                     isLoading = false,
                     isLoggedIn = false,
@@ -80,11 +94,13 @@ class AuthViewModel @Inject constructor(
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
+            Log.d("AuthViewModel", "Starting login for: $email")
             _authState.value = _authState.value.copy(isLoading = true, error = null)
 
             val result = authRepository.login(email, password)
             result.fold(
                 onSuccess = { user ->
+                    Log.d("AuthViewModel", "Login successful for user: ${user.id}")
                     val userProfile = authRepository.getCurrentUserProfile()
                     _authState.value = _authState.value.copy(
                         isLoading = false,
@@ -95,6 +111,7 @@ class AuthViewModel @Inject constructor(
                     )
                 },
                 onFailure = { exception ->
+                    Log.e("AuthViewModel", "Login failed", exception)
                     val errorMessage = when {
                         exception.message?.contains("Invalid login credentials") == true ->
                             "Email or password is incorrect"
@@ -163,11 +180,12 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            Log.d("AuthViewModel", "Starting logout")
             _authState.value = _authState.value.copy(isLoading = true)
 
             try {
                 authRepository.logout()
-                //reset
+                // Reset to clean state
                 _authState.value = AuthState(
                     isLoading = false,
                     isLoggedIn = false,
@@ -175,7 +193,9 @@ class AuthViewModel @Inject constructor(
                     userProfile = null,
                     error = null
                 )
+                Log.d("AuthViewModel", "Logout completed successfully")
             } catch (e: Exception) {
+                Log.e("AuthViewModel", "Logout failed", e)
                 _authState.value = _authState.value.copy(
                     isLoading = false,
                     error = "Logout failed: ${e.message}"

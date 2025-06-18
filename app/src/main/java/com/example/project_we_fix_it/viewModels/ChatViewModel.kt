@@ -87,20 +87,32 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
-
     fun createOrGetChat(breakdownId: String?, participants: List<String>) {
         viewModelScope.launch {
             _isLoading.value = true
             Log.d("ChatViewModel", "Creating or getting chat for breakdown ID: $breakdownId")
+            Log.d("ChatViewModel", "Participants: $participants")
+
             try {
+                val currentUserId = authRepository.getCurrentUser()?.id
+                val finalParticipants = if (currentUserId != null && !participants.contains(currentUserId)) {
+                    participants + currentUserId
+                } else {
+                    participants
+                }.distinct()
+
+                Log.d("ChatViewModel", "Final participants after adding current user: $finalParticipants")
+
                 val existingChat = breakdownId?.let {
                     repository.getChatByBreakdownId(it)
                 }
+
                 Log.d("ChatViewModel", "Existing chat: $existingChat")
+
                 if (existingChat == null) {
                     val newChat = repository.createChat(
                         breakdownId = breakdownId,
-                        participants = participants
+                        participants = finalParticipants
                     )
                     Log.d("ChatViewModel", "New chat created: $newChat")
                     _createdChatId.value = newChat.chat_id
@@ -117,6 +129,7 @@ class ChatViewModel @Inject constructor(
             }
         }
     }
+
     suspend fun getUserProfile(userId: String?): UserProfile? {
         if (userId == null) return null
         return viewModelScope.run {
