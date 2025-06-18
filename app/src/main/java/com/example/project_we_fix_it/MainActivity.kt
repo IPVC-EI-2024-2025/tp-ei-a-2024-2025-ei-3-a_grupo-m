@@ -66,11 +66,13 @@ fun AppNavigation(
         derivedStateOf { authState.userProfile?.role == "admin" }
     }
 
-    LaunchedEffect(authState.isLoggedIn) {
-        if (authState.isLoggedIn) {
+    LaunchedEffect(authState.isLoggedIn, authState.userProfile?.role) {
+        if (authState.isLoggedIn && authState.userProfile != null) {
+            // Clear back stack first
             navController.popBackStack(navController.graph.startDestinationId, false)
 
-            if (isAdmin) {
+            // Navigate to the correct dashboard based on user role
+            if (authState.userProfile?.role == "admin") {
                 navController.navigate(Routes.ADMIN_DASHBOARD) {
                     popUpTo(Routes.LOGIN) { inclusive = true }
                     launchSingleTop = true
@@ -81,12 +83,13 @@ fun AppNavigation(
                     launchSingleTop = true
                 }
             }
-        } else {
+        } else if (!authState.isLoggedIn && !authState.isLoading) {
             navController.navigate(Routes.LOGIN) {
                 popUpTo(0) { inclusive = true }
             }
         }
     }
+
 
 
 

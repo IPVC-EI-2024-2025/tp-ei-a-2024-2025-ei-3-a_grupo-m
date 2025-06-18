@@ -51,7 +51,10 @@ data class CommonScreenActions(
     val showBackButton: Boolean = false,
 )
 
-class AppNavigator(val navController: NavController) {
+class AppNavigator(
+    val navController: NavController,
+    private val getCurrentUserRole: () -> String? = { null }
+) {
     fun navigateTo(route: String, builder: NavOptionsBuilder.() -> Unit = {}) =
         navController.navigate(route, builder)
 
@@ -88,6 +91,14 @@ class AppNavigator(val navController: NavController) {
     fun navigateToRegister() = navigateTo(Routes.REGISTER)
     fun navigateToPasswordRecovery() = navigateTo(Routes.PASSWORD_RECOVERY)
 
+
+    fun navigateToRoleBasedHome() {
+        when (getCurrentUserRole()) {
+            "admin" -> navigateToAdminDashboard()
+            else -> navigateToDashboard()
+        }
+    }
+
     fun getCommonActions(showBackButton: Boolean = false) = CommonScreenActions(
         //admin
         navigateToAdminUsers = ::navigateToAdminUsers,
@@ -98,7 +109,7 @@ class AppNavigator(val navController: NavController) {
         //general
         navController = navController,
         navigateToProfile = ::navigateToProfile,
-        navigateToHome = ::navigateToDashboard,
+        navigateToHome = ::navigateToRoleBasedHome,
         logout = ::navigateToLogin,
         navigateToNotifications = ::navigateToNotifications,
         openSettings = ::navigateToSettings,
